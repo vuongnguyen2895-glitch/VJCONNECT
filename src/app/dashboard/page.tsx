@@ -40,8 +40,9 @@ const ACTIVITY_LABELS: Record<string, string> = {
   created: "đã tạo hợp đồng",
   updated: "đã cập nhật hợp đồng",
   sent_for_signing: "đã gửi ký",
-  signed_by_landlord: "bên A đã ký",
-  signed_by_tenant: "bên B đã ký",
+  signed_by_landlord: "(bên A) đã ký hợp đồng",
+  signed_by_tenant: "(bên B) đã ký hợp đồng",
+  deposit_received: "đã xác nhận nhận cọc",
 };
 
 export default function DashboardPage() {
