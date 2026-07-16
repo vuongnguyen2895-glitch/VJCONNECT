@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { db } from "./db";
 import { ContractStatus, Plan } from "@prisma/client";
 
@@ -53,6 +54,28 @@ export async function canCreateContract(userId: string): Promise<{ allowed: bool
   }
 
   return { allowed: true };
+}
+
+/**
+ * Generate a high-entropy, unguessable token for a public signing link.
+ */
+export function generateSigningToken(): string {
+  return randomBytes(24).toString("hex");
+}
+
+/**
+ * Recompute a contract's status from which parties have signed so far.
+ * Order-agnostic: either party may sign first.
+ */
+export function computeStatusFromSignatures(
+  landlordSignedAt: Date | null,
+  tenantSignedAt: Date | null,
+  fallback: ContractStatus,
+): ContractStatus {
+  if (landlordSignedAt && tenantSignedAt) return ContractStatus.SIGNED;
+  if (landlordSignedAt) return ContractStatus.PENDING_TENANT;
+  if (tenantSignedAt) return ContractStatus.PENDING_LANDLORD;
+  return fallback;
 }
 
 /**
