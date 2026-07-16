@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER & AUTH
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  cccd          String?   // Căn cước công dân
+  address       String?
+  avatarUrl     String?   @map("avatar_url")
+
+  // Subscription
+  plan          Plan      @default(FREE)
+  planExpiresAt DateTime? @map("plan_expires_at")
+
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+
+  // Relations
+  contracts     Contract[]     @relation("ContractOwner")
+  partyRecords  ContractParty[]
+  notifications Notification[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  target    String   // email or phone
+  code      String
+  type      OtpType  @default(EMAIL)
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([target, code])
+  @@map("otp_codes")
+}
+
+// ============================================================
+// CONTRACT TEMPLATES
+// ============================================================
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String   // "Nhà nguyên căn", "Chung cư"...
+  slug        String   @unique
+  category    TemplateCategory
+  description String?
+  icon        String?  // emoji or icon name
+  contentJson Json     @map("content_json") // template structure
+  version     Int      @default(1)
+  isActive    Boolean  @default(true) @map("is_active")
+  isPremium   Boolean  @default(false) @map("is_premium")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  contracts   Contract[]
+
+  @@map("templates")
+}
+
+// ============================================================
+// CONTRACTS
+// ============================================================
+
+model Contract {
+  id          String         @id @default(cuid())
+  contractNo  String?        @unique @map("contract_no") // VJC-2026-00001
+  templateId  String         @map("template_id")
+  ownerId     String         @map("owner_id")
+  status      ContractStatus @default(DRAFT)
+  title       String?
+
+  // Contract data (all form fields as JSON)
+  dataJson    Json           @map("data_json")
+
+  // Important dates
+  startDate   DateTime?      @map("start_date")
+  endDate     DateTime?      @map("end_date")
+  signedAt    DateTime?      @map("signed_at")
+
+  // Rent info (denormalized for quick access)
+  rentAmount  Decimal?       @map("rent_amount") @db.Decimal(15, 0)
+  deposit     Decimal?       @db.Decimal(15, 0)
+
+  // Timestamps
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  template    Template       @relation(fields: [templateId], references: [id])
+  owner       User           @relation("ContractOwner", fields: [ownerId], references: [id])
+  parties     ContractParty[]
+  files       ContractFile[]
+  activities  ContractActivity[]
+
+  @@index([ownerId, status])
+  @@index([status, endDate])
+  @@map("contracts")
+}
+
+model ContractParty {
+  id           String    @id @default(cuid())
+  contractId   String    @map("contract_id")
+  role         PartyRole
+  userId       String?   @map("user_id") // nullable: tenant may not have account yet
+
+  // Party info (snapshot at signing time)
+  name         String
+  cccd         String?
+  phone        String?
+  email        String?
+  address      String?
+
+  // Signing
+  signedAt     DateTime? @map("signed_at")
+  signatureRef String?   @map("signature_ref") // VNPT SmartCA reference
+  signingUrl   String?   @map("signing_url")
+  signingExpAt DateTime? @map("signing_exp_at")
+
+  // Timestamps
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  contract     Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user         User?     @relation(fields: [userId], references: [id])
+
+  @@unique([contractId, role])
+  @@map("contract_parties")
+}
+
+model ContractFile {
+  id         String   @id @default(cuid())
+  contractId String   @map("contract_id")
+  fileType   FileType @map("file_type")
+  fileName   String   @map("file_name")
+  fileUrl    String   @map("file_url")
+  fileSize   Int?     @map("file_size") // bytes
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@map("contract_files")
+}
+
+model ContractActivity {
+  id         String   @id @default(cuid())
+  contractId String   @map("contract_id")
+  action     String   // "created", "sent_for_signing", "signed_by_landlord", etc.
+  actorId    String?  @map("actor_id")
+  actorName  String?  @map("actor_name")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, createdAt])
+  @@map("contract_activities")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String   // "contract_signed", "contract_expiring", etc.
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum OtpType {
+  EMAIL
+  SMS
+}
+
+enum TemplateCategory {
+  HOUSE        // Nhà nguyên căn
+  APARTMENT    // Chung cư / Căn hộ
+  ROOM         // Phòng trọ
+  COMMERCIAL   // Mặt bằng kinh doanh
+  WAREHOUSE    // Kho xưởng
+  LAND         // Đất trống
+}
+
+enum ContractStatus {
+  DRAFT              // Bản nháp
+  PENDING_LANDLORD   // Chờ chủ nhà ký
+  PENDING_TENANT     // Chờ người thuê ký
+  SIGNED             // Đã ký
+  EXPIRED            // Hết hạn
+  TERMINATED         // Đã thanh lý
+}
+
+enum PartyRole {
+  LANDLORD   // Bên cho thuê (Bên A)
+  TENANT     // Bên thuê (Bên B)
+}
+
+enum FileType {
+  DRAFT_PDF      // PDF bản nháp
+  SIGNED_PDF     // PDF đã ký
+  ATTACHMENT     // Tài liệu đính kèm
+}

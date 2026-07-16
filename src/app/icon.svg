@@ -1,0 +1,23 @@
+<svg width="280" height="280" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M64,0 L184,0 L240,56 L240,256 Q240,280 216,280 L64,280 Q40,280 40,256 L40,24 Q40,0 64,0 Z"
+    fill="url(#vjc-favicon-gradient)"
+  />
+  <text
+    x="140"
+    y="185"
+    textAnchor="middle"
+    fontFamily="Georgia, 'Times New Roman', serif"
+    fontSize="118"
+    fill="#EDE6E8"
+  >
+    vj
+  </text>
+  <circle cx="186" cy="76" r="13" fill="#EDE6E8" />
+  <defs>
+    <linearGradient id="vjc-favicon-gradient" x1="40" y1="0" x2="240" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6B3364" />
+      <stop offset="1" stop-color="#4A2244" />
+    </linearGradient>
+  </defs>
+</svg>
