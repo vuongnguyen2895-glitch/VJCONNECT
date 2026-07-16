@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "#how-it-works", label: "Cách hoạt động" },
   { href: "#templates", label: "Mẫu hợp đồng" },
   { href: "#pricing", label: "Bảng giá" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export default function Navbar() {

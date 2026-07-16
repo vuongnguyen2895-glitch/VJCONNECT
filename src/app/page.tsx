@@ -16,10 +16,13 @@ import {
   Lock,
   PenLine,
   ShieldCheck,
+  User,
+  X,
   Zap,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import Faq from "@/components/marketing/Faq";
 
 const TRUST_ITEMS = [
   { icon: ShieldCheck, label: "Chuẩn theo quy định pháp luật hiện hành" },
@@ -145,6 +148,53 @@ const PLANS = [
     cta: "Liên hệ tư vấn",
     highlighted: false,
   },
+];
+
+const ROLES = [
+  {
+    icon: Briefcase,
+    name: "Môi giới BĐS",
+    headline: "Soạn hợp đồng ngay khi chốt khách",
+    benefits: [
+      "Soạn hợp đồng từ mẫu chuẩn pháp lý chỉ trong vài phút",
+      "Theo dõi trạng thái từng hợp đồng — bản nháp, chờ ký, đã ký — trên một dashboard",
+      "Không còn hợp đồng thất lạc trong file Word hay tin nhắn Zalo",
+    ],
+  },
+  {
+    icon: Home,
+    name: "Chủ nhà",
+    headline: "Quản lý hợp đồng cho thuê từ xa",
+    benefits: [
+      "Tạo hợp đồng cho thuê chuẩn pháp lý mà không cần rành luật",
+      "Quản lý toàn bộ hợp đồng, thời hạn và giá thuê ở một nơi duy nhất",
+      "Xuất PDF và tải về ngay khi cần, không phải in giấy",
+    ],
+  },
+  {
+    icon: User,
+    name: "Người thuê",
+    headline: "Minh bạch điều khoản ngay từ đầu",
+    benefits: [
+      "Điều khoản thuê nhà, giá thuê và đặt cọc rõ ràng ngay từ bản đầu tiên",
+      "Xem lại hợp đồng mọi lúc, không lo thất lạc giấy tờ",
+      "Biết chính xác ngày thanh toán và ngày hết hạn hợp đồng",
+    ],
+  },
+];
+
+const OLD_WAY = [
+  "Hợp đồng viết tay hoặc file Word rời rạc, dễ thất lạc",
+  "Mỗi lần cần hợp đồng phải lục lại email, Zalo, hoặc ổ cứng",
+  "Không nhớ chính xác ngày hết hạn, bị động khi khách báo trả nhà",
+  "Không biết hợp đồng nào là bản mới nhất đã thống nhất",
+];
+
+const NEW_WAY = [
+  "Mọi hợp đồng lưu tập trung trên một dashboard, tìm kiếm tức thì",
+  "Soạn hợp đồng chuẩn pháp lý chỉ trong 5 phút, không cần hiểu luật",
+  "Theo dõi trạng thái từng hợp đồng: bản nháp, chờ ký, đã ký, sắp hết hạn",
+  "Xuất PDF ngay khi cần, gửi cho đối tác không mất công in ấn",
 ];
 
 export default function LandingPage() {
@@ -369,6 +419,77 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Roles */}
+        <section id="for-you" className="bg-slate-50 py-20 md:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                Thiết kế cho mọi vai trò trong giao dịch thuê nhà
+              </h2>
+              <p className="mt-4 text-lg text-slate-600">
+                Môi giới chốt deal nhanh hơn. Chủ nhà quản lý từ xa. Người thuê yên tâm về điều khoản ngay từ đầu.
+              </p>
+            </div>
+
+            <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {ROLES.map((role) => (
+                <div key={role.name} className="card p-7">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                    <role.icon size={22} />
+                  </span>
+                  <p className="mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">{role.name}</p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">{role.headline}</h3>
+                  <ul className="mt-4 space-y-2.5">
+                    {role.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-600">
+                        <Check size={15} className="mt-0.5 shrink-0 text-brand-600" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Old way vs VJConnect */}
+        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Vẫn là cách bạn cho thuê — chỉ chuyên nghiệp hơn
+            </h2>
+            <p className="mt-4 text-lg text-slate-600">
+              Không yêu cầu bạn thay đổi thói quen. Chỉ chuyển những gì đang rời rạc thành hợp đồng có tổ chức, có thể tra cứu bất cứ lúc nào.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-7">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Cách cũ</p>
+              <ul className="mt-4 space-y-3.5">
+                {OLD_WAY.map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-600">
+                    <X size={15} className="mt-0.5 shrink-0 text-slate-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border-2 border-brand-500 bg-white p-7 shadow-lg shadow-brand-500/10">
+              <p className="text-xs font-bold uppercase tracking-wide text-brand-600">Với VJConnect</p>
+              <ul className="mt-4 space-y-3.5">
+                {NEW_WAY.map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700">
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
         {/* Pricing */}
         <section id="pricing" className="bg-slate-50 py-20 md:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -416,6 +537,15 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Câu hỏi thường gặp</h2>
+            <p className="mt-4 text-lg text-slate-600">Câu trả lời cho những thắc mắc phổ biến nhất.</p>
+          </div>
+          <Faq />
         </section>
 
         {/* Final CTA */}
