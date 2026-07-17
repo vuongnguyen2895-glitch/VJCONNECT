@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { formatVND, formatDateVN } from "@/lib/contract-utils";
+import { DEFAULT_CLAUSES, type ContractClause } from "@/types";
 
 interface PartyData {
   partyKind: string;
@@ -22,6 +23,20 @@ interface RentPeriod {
   fromDate: string;
   toDate: string;
   amount: string;
+}
+
+/**
+ * Escape a value for safe interpolation into HTML — all clause/party/property
+ * content below comes from user input, so this must run before every insertion.
+ */
+function esc(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -66,6 +81,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       representativePosition: party?.representativePosition || fallback?.representativePosition || "",
     });
 
+    // Contracts created before the custom-clauses feature have no `clauses` key at all —
+    // fall back to the same default legal articles so their PDF is unchanged.
+    // Contracts created after always have a real (possibly empty, if the user cleared it) array.
+    const clauses: ContractClause[] = data.clauses !== undefined ? data.clauses : DEFAULT_CLAUSES;
+
     const html = generateContractHTML({
       contractNo: contract.contractNo || "",
       templateName: contract.template.name,
@@ -73,6 +93,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       tenant: buildParty(tenantParty, data.tenant),
       property: data.property || {},
       terms: data.terms || {},
+      clauses,
       startDate: contract.startDate,
       endDate: contract.endDate,
       rentAmount: contract.rentAmount,
@@ -95,37 +116,47 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 function partyBlock(label: string, roleLabel: string, party: PartyData): string {
   if (party.partyKind === "COMPANY") {
     return `
-  <p><strong>${label} (${roleLabel}):</strong></p>
+  <p><strong>${esc(label)} (${esc(roleLabel)}):</strong></p>
   <table>
-    <tr><td>Công ty:</td><td>${party.name}</td></tr>
-    <tr><td>Mã số DN:</td><td>${party.businessRegNo || "___"}</td></tr>
-    <tr><td>Địa chỉ:</td><td>${party.address || "___"}</td></tr>
-    <tr><td>Đại diện bởi:</td><td>${party.representativeName || "___"}</td></tr>
-    <tr><td>Chức vụ:</td><td>${party.representativePosition || "___"}</td></tr>
-    <tr><td>Số điện thoại:</td><td>${party.phone}</td></tr>
-    ${party.email ? `<tr><td>Email:</td><td>${party.email}</td></tr>` : ""}
+    <tr><td>Công ty:</td><td>${esc(party.name)}</td></tr>
+    <tr><td>Mã số DN:</td><td>${esc(party.businessRegNo) || "___"}</td></tr>
+    <tr><td>Địa chỉ:</td><td>${esc(party.address) || "___"}</td></tr>
+    <tr><td>Đại diện bởi:</td><td>${esc(party.representativeName) || "___"}</td></tr>
+    <tr><td>Chức vụ:</td><td>${esc(party.representativePosition) || "___"}</td></tr>
+    <tr><td>Số điện thoại:</td><td>${esc(party.phone)}</td></tr>
+    ${party.email ? `<tr><td>Email:</td><td>${esc(party.email)}</td></tr>` : ""}
   </table>`;
   }
 
   return `
-  <p><strong>${label} (${roleLabel}):</strong></p>
+  <p><strong>${esc(label)} (${esc(roleLabel)}):</strong></p>
   <table>
-    <tr><td>Ông/bà:</td><td>${party.name}</td></tr>
-    ${party.dob ? `<tr><td>Sinh năm:</td><td>${party.dob}</td></tr>` : ""}
-    <tr><td>Số CCCD/CMND:</td><td>${party.cccd || "___"}</td></tr>
-    ${party.idIssueDate ? `<tr><td>Cấp ngày:</td><td>${party.idIssueDate}</td></tr>` : ""}
-    ${party.idIssuePlace ? `<tr><td>Tại:</td><td>${party.idIssuePlace}</td></tr>` : ""}
-    <tr><td>Địa chỉ:</td><td>${party.address || "___"}</td></tr>
-    <tr><td>Số điện thoại:</td><td>${party.phone}</td></tr>
-    ${party.email ? `<tr><td>Email:</td><td>${party.email}</td></tr>` : ""}
+    <tr><td>Ông/bà:</td><td>${esc(party.name)}</td></tr>
+    ${party.dob ? `<tr><td>Sinh năm:</td><td>${esc(party.dob)}</td></tr>` : ""}
+    <tr><td>Số CCCD/CMND:</td><td>${esc(party.cccd) || "___"}</td></tr>
+    ${party.idIssueDate ? `<tr><td>Cấp ngày:</td><td>${esc(party.idIssueDate)}</td></tr>` : ""}
+    ${party.idIssuePlace ? `<tr><td>Tại:</td><td>${esc(party.idIssuePlace)}</td></tr>` : ""}
+    <tr><td>Địa chỉ:</td><td>${esc(party.address) || "___"}</td></tr>
+    <tr><td>Số điện thoại:</td><td>${esc(party.phone)}</td></tr>
+    ${party.email ? `<tr><td>Email:</td><td>${esc(party.email)}</td></tr>` : ""}
   </table>`;
 }
 
 function signatureLine(party: PartyData): string {
   if (party.partyKind === "COMPANY") {
-    return `${party.representativeName || party.name}<br/><span style="font-weight:normal;font-size:12px;">(Đại diện ${party.name})</span>`;
+    return `${esc(party.representativeName) || esc(party.name)}<br/><span style="font-weight:normal;font-size:12px;">(Đại diện ${esc(party.name)})</span>`;
   }
-  return party.name;
+  return esc(party.name);
+}
+
+/** Render a clause's free-text content as one <p class="indent"> per non-empty line. */
+function clauseContentHtml(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<p class="indent">${esc(line)}</p>`)
+    .join("\n");
 }
 
 function generateContractHTML(data: {
@@ -135,6 +166,7 @@ function generateContractHTML(data: {
   tenant: PartyData;
   property: any;
   terms: any;
+  clauses: ContractClause[];
   startDate: Date | null;
   endDate: Date | null;
   rentAmount: any;
@@ -151,7 +183,7 @@ function generateContractHTML(data: {
   };
 
   const rentPeriods: RentPeriod[] = Array.isArray(data.terms.rentPeriods) ? data.terms.rentPeriods : [];
-  const vatRate = data.terms.vatRate;
+  const vatRate = esc(data.terms.vatRate);
 
   const fmtPeriodDate = (d: Date | string | null | undefined) => (d ? formatDateVN(d) : "___");
   const firstPeriodEnd = rentPeriods[0]?.fromDate ? fmtPeriodDate(rentPeriods[0].fromDate) : fmtPeriodDate(data.endDate);
@@ -165,25 +197,33 @@ function generateContractHTML(data: {
   ].join("");
 
   const legalDocLines = [
-    data.property.plotNo ? `Thửa đất số: ${data.property.plotNo}` : "",
-    data.property.mapSheetNo ? `Tờ bản đồ số: ${data.property.mapSheetNo}` : "",
+    data.property.plotNo ? `Thửa đất số: ${esc(data.property.plotNo)}` : "",
+    data.property.mapSheetNo ? `Tờ bản đồ số: ${esc(data.property.mapSheetNo)}` : "",
     data.property.landCertNo
-      ? `Giấy chứng nhận quyền sử dụng đất số: ${data.property.landCertNo}${data.property.landCertDate ? `, cấp ngày ${formatDateVN(data.property.landCertDate)}` : ""}${data.property.landCertIssuer ? ` do ${data.property.landCertIssuer} cấp` : ""}`
+      ? `Giấy chứng nhận quyền sử dụng đất số: ${esc(data.property.landCertNo)}${data.property.landCertDate ? `, cấp ngày ${formatDateVN(data.property.landCertDate)}` : ""}${data.property.landCertIssuer ? ` do ${esc(data.property.landCertIssuer)} cấp` : ""}`
       : "",
   ].filter(Boolean);
 
   const bankInfo =
     data.terms.bankAccountNumber || data.terms.bankAccountName
-      ? `<tr><td>Chủ tài khoản:</td><td>${data.terms.bankAccountName || "___"}</td></tr>
-         <tr><td>Số tài khoản:</td><td>${data.terms.bankAccountNumber || "___"}</td></tr>
-         <tr><td>Ngân hàng:</td><td>${data.terms.bankName || "___"}</td></tr>`
+      ? `<tr><td>Chủ tài khoản:</td><td>${esc(data.terms.bankAccountName) || "___"}</td></tr>
+         <tr><td>Số tài khoản:</td><td>${esc(data.terms.bankAccountNumber) || "___"}</td></tr>
+         <tr><td>Ngân hàng:</td><td>${esc(data.terms.bankName) || "___"}</td></tr>`
       : "";
+
+  const clauseSections = data.clauses
+    .map(
+      (clause, index) => `
+  <h2>Điều ${5 + index}: ${esc(clause.title)}</h2>
+${clauseContentHtml(clause.content)}`,
+    )
+    .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Hợp đồng ${data.contractNo}</title>
+  <title>Hợp đồng ${esc(data.contractNo)}</title>
   <style>
     @page { size: A4; margin: 2cm; }
     body { font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.8; color: #000; max-width: 800px; margin: 0 auto; padding: 40px; }
@@ -214,28 +254,28 @@ function generateContractHTML(data: {
     <p>---o0o---</p>
   </div>
 
-  <h1>HỢP ĐỒNG THUÊ ${data.templateName.toUpperCase()}</h1>
-  <p style="text-align: center; font-style: italic;">Số: ${data.contractNo}</p>
+  <h1>HỢP ĐỒNG THUÊ ${esc(data.templateName.toUpperCase())}</h1>
+  <p style="text-align: center; font-style: italic;">Số: ${esc(data.contractNo)}</p>
   <p style="text-align: right; font-style: italic;">Ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}</p>
 
   <p class="indent">Căn cứ Bộ luật Dân sự số 91/2015/QH13 ngày 24/11/2015;</p>
   <p class="indent">Căn cứ Luật Nhà ở số 27/2023/QH15 ngày 27/11/2023;</p>
   <p class="indent">Căn cứ Luật Giao dịch điện tử số 20/2023/QH15 ngày 22/06/2023;</p>
-  <p class="indent">Căn cứ vào nhu cầu và khả năng thực tế của hai bên, hôm nay tại địa chỉ: ${data.property.address || "___"}, chúng tôi gồm:</p>
+  <p class="indent">Căn cứ vào nhu cầu và khả năng thực tế của hai bên, hôm nay tại địa chỉ: ${esc(data.property.address) || "___"}, chúng tôi gồm:</p>
 
   ${partyBlock("BÊN CHO THUÊ", "Bên A", data.landlord)}
   ${partyBlock("BÊN THUÊ", "Bên B", data.tenant)}
 
   <h2>Điều 1: Đối tượng hợp đồng</h2>
-  <p class="indent">Bên A là chủ sử dụng/sở hữu hợp pháp tài sản cho thuê tại địa chỉ: <strong>${data.property.address || "___"}</strong>${data.property.area ? `, diện tích ${data.property.area} m²` : ""}${data.property.floor ? `, ${data.property.floor}` : ""}${data.property.rooms ? `, ${data.property.rooms}` : ""}${data.property.furniture ? `, nội thất: ${data.property.furniture}` : ""}.</p>
+  <p class="indent">Bên A là chủ sử dụng/sở hữu hợp pháp tài sản cho thuê tại địa chỉ: <strong>${esc(data.property.address) || "___"}</strong>${data.property.area ? `, diện tích ${esc(data.property.area)} m²` : ""}${data.property.floor ? `, ${esc(data.property.floor)}` : ""}${data.property.rooms ? `, ${esc(data.property.rooms)}` : ""}${data.property.furniture ? `, nội thất: ${esc(data.property.furniture)}` : ""}.</p>
   ${legalDocLines.length > 0 ? `<p class="indent">Theo các giấy tờ pháp lý sau: ${legalDocLines.join("; ")}.</p>` : ""}
   <p class="indent">Bằng hợp đồng này, Bên A đồng ý cho Bên B thuê, Bên B đồng ý thuê toàn bộ tài sản nêu trên theo hiện trạng thực tế.</p>
-  ${data.property.purpose ? `<p class="indent">Mục đích thuê: ${data.property.purpose}.</p>` : ""}
+  ${data.property.purpose ? `<p class="indent">Mục đích thuê: ${esc(data.property.purpose)}.</p>` : ""}
 
   <h2>Điều 2: Thời hạn thuê, giá thuê</h2>
   <table>
-    <tr><td>Thời hạn thuê:</td><td>${data.terms.duration || "12"} tháng, từ ngày ${data.startDate ? formatDateVN(data.startDate) : "___"} đến ngày ${data.endDate ? formatDateVN(data.endDate) : "___"}</td></tr>
-    <tr><td>Ngày thanh toán:</td><td>Ngày ${data.terms.paymentDate || "___"} hàng tháng</td></tr>
+    <tr><td>Thời hạn thuê:</td><td>${esc(data.terms.duration) || "12"} tháng, từ ngày ${data.startDate ? formatDateVN(data.startDate) : "___"} đến ngày ${data.endDate ? formatDateVN(data.endDate) : "___"}</td></tr>
+    <tr><td>Ngày thanh toán:</td><td>Ngày ${esc(data.terms.paymentDate) || "___"} hàng tháng</td></tr>
     <tr><td>Hình thức thanh toán:</td><td>Chuyển khoản ngân hàng hoặc tiền mặt</td></tr>
   </table>
   <p class="indent">Giá thuê theo từng giai đoạn:</p>
@@ -250,7 +290,7 @@ function generateContractHTML(data: {
     <tr><td>Tiền nước:</td><td>${costMethodLabel(data.terms.costWater)}</td></tr>
     <tr><td>Internet:</td><td>${costMethodLabel(data.terms.costInternet)}</td></tr>
   </table>
-  ${data.terms.otherAgreement ? `<p class="indent">Thỏa thuận khác: ${data.terms.otherAgreement}.</p>` : ""}
+  ${data.terms.otherAgreement ? `<p class="indent">Thỏa thuận khác: ${esc(data.terms.otherAgreement)}.</p>` : ""}
   <p class="indent">Giá thuê nêu trên không bao gồm thuế thu nhập cá nhân (TNCN) từ hoạt động cho thuê tài sản. Thuế TNCN phát sinh (nếu có) do Bên A chịu trách nhiệm kê khai và nộp theo quy định pháp luật.</p>
 
   <h2>Điều 4: Tiền đặt cọc và phương thức thanh toán</h2>
@@ -261,42 +301,7 @@ function generateContractHTML(data: {
   <p class="indent">Nếu Bên B đơn phương chấm dứt hợp đồng mà không thực hiện nghĩa vụ báo trước thì Bên A không phải hoàn trả lại tiền đặt cọc này.</p>
   <p class="indent">Nếu Bên A đơn phương chấm dứt hợp đồng mà không thực hiện nghĩa vụ báo trước thì Bên A phải hoàn trả tiền đặt cọc và bồi thường thêm một khoản bằng chính tiền đặt cọc.</p>
   <p class="indent">Tiền đặt cọc không được dùng để thanh toán tiền thuê. Nếu Bên B vi phạm hợp đồng gây thiệt hại cho Bên A, Bên A có quyền khấu trừ tiền đặt cọc để bù đắp chi phí khắc phục thiệt hại.</p>
-
-  <h2>Điều 5: Quyền và nghĩa vụ của Bên A</h2>
-  <p class="indent">1. Bàn giao tài sản thuê cho Bên B đúng thời hạn và tình trạng đã thỏa thuận.</p>
-  <p class="indent">2. Đảm bảo quyền sử dụng ổn định cho Bên B trong suốt thời hạn thuê, không đơn phương chấm dứt trước hạn trừ trường hợp bất khả kháng.</p>
-  <p class="indent">3. Bảo trì, sửa chữa những hư hỏng lớn không do lỗi của Bên B gây ra.</p>
-  <p class="indent">4. Có quyền yêu cầu Bên B thanh toán tiền thuê đầy đủ, đúng hạn.</p>
-  <p class="indent">5. Có quyền đơn phương chấm dứt hợp đồng và yêu cầu bồi thường thiệt hại nếu Bên B có một trong các hành vi sau:</p>
-  <p class="indent">&nbsp;&nbsp;a) Không trả tiền thuê liên tiếp từ 3 tháng trở lên mà không có lý do chính đáng;</p>
-  <p class="indent">&nbsp;&nbsp;b) Sử dụng tài sản không đúng mục đích thuê đã thỏa thuận;</p>
-  <p class="indent">&nbsp;&nbsp;c) Tự ý đục phá, cơi nới, cải tạo, phá dỡ tài sản đang thuê khi chưa được Bên A đồng ý;</p>
-  <p class="indent">&nbsp;&nbsp;d) Gây mất trật tự, ảnh hưởng nghiêm trọng đến sinh hoạt của những người xung quanh dù đã được nhắc nhở;</p>
-  <p class="indent">&nbsp;&nbsp;đ) Có hành vi vi phạm pháp luật nghiêm trọng tại tài sản thuê — trường hợp này Bên A có quyền chấm dứt hợp đồng ngay lập tức, không cần báo trước, đồng thời yêu cầu Bên B chịu trách nhiệm trước cơ quan nhà nước có thẩm quyền.</p>
-
-  <h2>Điều 6: Quyền và nghĩa vụ của Bên B</h2>
-  <p class="indent">1. Thanh toán tiền thuê đầy đủ, đúng hạn theo thỏa thuận.</p>
-  <p class="indent">2. Sử dụng tài sản đúng mục đích, giữ gìn và có trách nhiệm sửa chữa hư hỏng do mình gây ra.</p>
-  <p class="indent">3. Không được cho thuê lại, chuyển nhượng nếu không có sự đồng ý bằng văn bản của Bên A; không tự ý cải tạo, phá dỡ khi chưa được đồng ý.</p>
-  <p class="indent">4. Trả lại tài sản đúng thời hạn và trong tình trạng ban đầu (trừ hao mòn tự nhiên) khi hết hạn hoặc chấm dứt hợp đồng.</p>
-  <p class="indent">5. Tự chịu trách nhiệm tuân thủ các quy định pháp luật hiện hành liên quan đến việc sử dụng tài sản thuê.</p>
-  <p class="indent">6. Được ưu tiên ký hợp đồng thuê tiếp nếu hết hạn thuê mà tài sản vẫn tiếp tục được cho thuê.</p>
-  <p class="indent">7. Được tháo dỡ và mang đi các tài sản, trang thiết bị do Bên B tự lắp đặt khi hết hạn hoặc chấm dứt hợp đồng, miễn không làm ảnh hưởng đến kết cấu tài sản thuê.</p>
-
-  <h2>Điều 7: Chấm dứt hợp đồng</h2>
-  <p class="indent">1. Hợp đồng chấm dứt khi hết thời hạn thuê mà không được gia hạn.</p>
-  <p class="indent">2. Một bên muốn chấm dứt trước hạn phải thông báo bằng văn bản cho bên kia ít nhất 30 ngày, trừ trường hợp bất khả kháng.</p>
-  <p class="indent">3. Bên vi phạm phải bồi thường thiệt hại theo quy định của pháp luật.</p>
-
-  <h2>Điều 8: Bất khả kháng</h2>
-  <p class="indent">Các trường hợp bất khả kháng không do lỗi của Bên A hoặc Bên B, bao gồm: thiên tai, hỏa hoạn, dịch bệnh, chiến tranh; tài sản bị giải tỏa theo chính sách/dự án nhà nước; thay đổi quy hoạch đô thị ảnh hưởng nghiêm trọng đến việc sử dụng tài sản thuê.</p>
-  <p class="indent">Nếu các trường hợp trên xảy ra và hai bên không thống nhất được phương án xử lý, bên bị ảnh hưởng có quyền thanh lý hợp đồng và thông báo trước cho bên còn lại ít nhất 15 ngày làm việc. Khi thanh lý, Bên A hoàn trả tiền đặt cọc và các khoản đã thanh toán trước sau khi trừ thời gian đã sử dụng thực tế (nếu có).</p>
-
-  <h2>Điều 9: Điều khoản chung</h2>
-  <p class="indent">1. Hợp đồng này có hiệu lực kể từ ngày ký và là căn cứ duy nhất để giải quyết tranh chấp (nếu có).</p>
-  <p class="indent">2. Mọi điều chỉnh, bổ sung phải được lập thành phụ lục có chữ ký của cả hai bên và là một phần không thể tách rời của hợp đồng này.</p>
-  <p class="indent">3. Tranh chấp phát sinh sẽ được giải quyết thông qua thương lượng, hòa giải. Nếu không đạt được thỏa thuận, tranh chấp sẽ được đưa ra Tòa án có thẩm quyền giải quyết.</p>
-  <p class="indent">4. Hợp đồng được lập thành 02 (hai) bản có giá trị pháp lý như nhau, mỗi bên giữ 01 (một) bản.</p>
+${clauseSections}
 
   <div class="signature-area">
     <div class="signature-box">

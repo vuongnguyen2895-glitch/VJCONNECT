@@ -81,6 +81,18 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
             </div>
           )}
         </ReviewSection>
+
+        <ReviewSection title="Điều khoản chi tiết" onEdit={() => onEditStep(4)}>
+          {data.clauses.length === 0 ? (
+            <p className="text-sm text-slate-400">Không có điều khoản nào.</p>
+          ) : (
+            <ol className="list-decimal space-y-1 pl-4 text-sm text-slate-700">
+              {data.clauses.map((clause) => (
+                <li key={clause.id}>{clause.title || "(chưa đặt tiêu đề)"}</li>
+              ))}
+            </ol>
+          )}
+        </ReviewSection>
       </div>
 
       <button type="button" onClick={onSubmit} disabled={submitting} className="btn-primary mt-8 w-full justify-center">

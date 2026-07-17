@@ -124,6 +124,16 @@ export const termsSchema = z.object({
   bankName: z.string().optional(),
 });
 
+// ============================================================
+// CONTRACT — CUSTOM CLAUSES (add/remove/edit legal articles)
+// ============================================================
+
+export const clauseSchema = z.object({
+  id: z.string(),
+  title: z.string().min(2, "Vui lòng nhập tiêu đề điều khoản"),
+  content: z.string().min(5, "Vui lòng nhập nội dung điều khoản"),
+});
+
 export const createContractSchema = z.object({
   templateId: z.string().min(1, "Vui lòng chọn mẫu hợp đồng"),
   contractNo: z.preprocess(
@@ -135,6 +145,7 @@ export const createContractSchema = z.object({
   ),
   landlord: landlordSchema,
   tenant: tenantSchema,
+  clauses: z.array(clauseSchema).optional(),
   property: propertySchema,
   terms: termsSchema,
 });

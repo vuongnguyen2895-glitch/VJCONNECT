@@ -113,6 +113,7 @@ export async function POST(req: Request) {
           tenant: data.tenant,
           property: data.property,
           terms: data.terms,
+          clauses: data.clauses ?? [],
         },
         startDate,
         endDate,

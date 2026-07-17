@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Send, Tras
 import type { ContractStatus, PartyKind, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import { useAuth } from "@/hooks/useAuth";
+import { DEFAULT_CLAUSES } from "@/types";
 
 interface ContractParty {
   id: string;
@@ -25,12 +26,18 @@ interface ContractParty {
   signingUrl: string | null;
 }
 
+interface ContractClause {
+  id: string;
+  title: string;
+  content: string;
+}
+
 interface ContractDetail {
   id: string;
   contractNo: string | null;
   status: ContractStatus;
   title: string | null;
-  dataJson: { property?: Record<string, any>; terms?: Record<string, any> };
+  dataJson: { property?: Record<string, any>; terms?: Record<string, any>; clauses?: ContractClause[] };
   startDate: string | null;
   endDate: string | null;
   rentAmount: string | null;
@@ -170,6 +177,7 @@ export default function ContractDetailPage() {
   const tenant = contract.parties.find((p) => p.role === "TENANT");
   const terms = contract.dataJson?.terms ?? {};
   const property = contract.dataJson?.property ?? {};
+  const clauses = contract.dataJson?.clauses !== undefined ? contract.dataJson.clauses : DEFAULT_CLAUSES;
   const depositReceived = contract.activities.some((a) => a.action === "deposit_received");
 
   return (
@@ -326,6 +334,32 @@ export default function ContractDetailPage() {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+      </div>
+
+      <div className="card p-6">
+        <h2 className="text-sm font-bold text-slate-900">Điều khoản chi tiết</h2>
+        {clauses.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-400">Không có điều khoản nào.</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {clauses.map((clause, index) => (
+              <div key={clause.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+                <p className="text-sm font-bold text-slate-800">
+                  Điều {5 + index}: {clause.title || "(chưa đặt tiêu đề)"}
+                </p>
+                <div className="mt-1.5 space-y-1">
+                  {clause.content.split("\n").map((line, lineIndex) =>
+                    line.trim() ? (
+                      <p key={lineIndex} className="text-sm leading-relaxed text-slate-600">
+                        {line.trim()}
+                      </p>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

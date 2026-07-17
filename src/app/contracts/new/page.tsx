@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { createContractSchema, landlordSchema, propertySchema, tenantSchema, termsSchema } from "@/lib/validations";
+import { clauseSchema, createContractSchema, landlordSchema, propertySchema, tenantSchema, termsSchema } from "@/lib/validations";
 import { INITIAL_FORM_DATA, type ContractFormData, type RentPeriodFormData, type Template } from "@/types";
 import WizardProgress from "@/components/contract/WizardProgress";
 import StepTemplate from "@/components/contract/StepTemplate";
 import StepParty from "@/components/contract/StepParty";
 import StepPropertyTerms from "@/components/contract/StepPropertyTerms";
+import StepClauses from "@/components/contract/StepClauses";
 import StepReview from "@/components/contract/StepReview";
 
-const STEP_LABELS = ["Chọn mẫu", "Bên cho thuê", "Bên thuê", "Tài sản & điều khoản", "Xem lại"];
+const STEP_LABELS = ["Chọn mẫu", "Bên cho thuê", "Bên thuê", "Tài sản & điều khoản", "Điều khoản", "Xem lại"];
 const DRAFT_STORAGE_KEY = "vjconnect_contract_draft";
 
 export default function NewContractPage() {
@@ -102,10 +103,35 @@ export default function NewContractPage() {
     }));
   };
 
+  const addClause = () => {
+    setFormData((prev) => ({
+      ...prev,
+      clauses: [...prev.clauses, { id: crypto.randomUUID(), title: "", content: "" }],
+    }));
+  };
+  const removeClause = (index: number) => {
+    setFormData((prev) => ({ ...prev, clauses: prev.clauses.filter((_, i) => i !== index) }));
+  };
+  const moveClause = (index: number, direction: "up" | "down") => {
+    setFormData((prev) => {
+      const target = direction === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= prev.clauses.length) return prev;
+      const clauses = [...prev.clauses];
+      [clauses[index], clauses[target]] = [clauses[target], clauses[index]];
+      return { ...prev, clauses };
+    });
+  };
+  const updateClause = (index: number, field: "title" | "content", value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      clauses: prev.clauses.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+    }));
+  };
+
   function applyErrors(issues: { path: (string | number)[]; message: string }[]): boolean {
     const next: Record<string, string> = {};
     issues.forEach((issue) => {
-      next[String(issue.path[0])] = issue.message;
+      next[issue.path.join(".")] = issue.message;
     });
     setErrors((prev) => ({ ...prev, ...next }));
     return false;
@@ -135,6 +161,21 @@ export default function NewContractPage() {
       let ok = true;
       if (!propertyResult.success) ok = applyErrors(propertyResult.error.issues) && ok;
       if (!termsResult.success) ok = applyErrors(termsResult.error.issues) && ok;
+      return ok;
+    }
+    if (index === 4) {
+      let ok = true;
+      const next: Record<string, string> = {};
+      formData.clauses.forEach((clause, i) => {
+        const result = clauseSchema.safeParse(clause);
+        if (!result.success) {
+          ok = false;
+          result.error.issues.forEach((issue) => {
+            next[`clauses.${i}.${issue.path.join(".")}`] = issue.message;
+          });
+        }
+      });
+      if (!ok) setErrors((prev) => ({ ...prev, ...next }));
       return ok;
     }
     return true;
@@ -225,6 +266,16 @@ export default function NewContractPage() {
           />
         )}
         {step === 4 && (
+          <StepClauses
+            clauses={formData.clauses}
+            errors={errors}
+            onAdd={addClause}
+            onRemove={removeClause}
+            onMove={moveClause}
+            onChange={updateClause}
+          />
+        )}
+        {step === 5 && (
           <StepReview
             data={formData}
             template={selectedTemplate}
