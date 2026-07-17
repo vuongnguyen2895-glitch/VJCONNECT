@@ -82,8 +82,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Mẫu hợp đồng không hợp lệ" }, { status: 400 });
     }
 
-    // Generate contract number
-    const contractNo = await generateContractNo();
+    // Use custom contract number if provided, checking uniqueness; otherwise auto-generate
+    let contractNo: string;
+    if (data.contractNo) {
+      const existing = await db.contract.findUnique({ where: { contractNo: data.contractNo } });
+      if (existing) {
+        return NextResponse.json({ error: "Số hợp đồng này đã được sử dụng" }, { status: 400 });
+      }
+      contractNo = data.contractNo;
+    } else {
+      contractNo = await generateContractNo();
+    }
 
     // Calculate dates
     const startDate = new Date(data.terms.startDate);

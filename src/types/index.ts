@@ -84,8 +84,11 @@ export interface RentPeriodFormData {
   amount: string;
 }
 
+export type CostMethod = "tenant" | "included" | "fixed";
+
 export interface ContractFormData {
   templateId: string;
+  contractNo: string;
   landlord: PartyFormData;
   tenant: PartyFormData;
   property: {
@@ -94,6 +97,7 @@ export interface ContractFormData {
     floor: string;
     rooms: string;
     furniture: string;
+    purpose: string;
     plotNo: string;
     mapSheetNo: string;
     landCertNo: string;
@@ -108,7 +112,11 @@ export interface ContractFormData {
     paymentDate: string;
     duration: string;
     startDate: string;
-    utilities: "tenant" | "included" | "fixed";
+    costManagement: CostMethod;
+    costElectricity: CostMethod;
+    costWater: CostMethod;
+    costInternet: CostMethod;
+    otherAgreement: string;
     bankAccountName: string;
     bankAccountNumber: string;
     bankName: string;
@@ -132,6 +140,7 @@ const INITIAL_PARTY_DATA: PartyFormData = {
 
 export const INITIAL_FORM_DATA: ContractFormData = {
   templateId: "",
+  contractNo: "",
   landlord: { ...INITIAL_PARTY_DATA },
   tenant: { ...INITIAL_PARTY_DATA },
   property: {
@@ -140,6 +149,7 @@ export const INITIAL_FORM_DATA: ContractFormData = {
     floor: "",
     rooms: "",
     furniture: "",
+    purpose: "",
     plotNo: "",
     mapSheetNo: "",
     landCertNo: "",
@@ -154,7 +164,11 @@ export const INITIAL_FORM_DATA: ContractFormData = {
     paymentDate: "5",
     duration: "12",
     startDate: "",
-    utilities: "tenant",
+    costManagement: "tenant",
+    costElectricity: "tenant",
+    costWater: "tenant",
+    costInternet: "tenant",
+    otherAgreement: "",
     bankAccountName: "",
     bankAccountNumber: "",
     bankName: "",

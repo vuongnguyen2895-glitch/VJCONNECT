@@ -14,6 +14,7 @@ import StepPropertyTerms from "@/components/contract/StepPropertyTerms";
 import StepReview from "@/components/contract/StepReview";
 
 const STEP_LABELS = ["Chọn mẫu", "Bên cho thuê", "Bên thuê", "Tài sản & điều khoản", "Xem lại"];
+const DRAFT_STORAGE_KEY = "vjconnect_contract_draft";
 
 export default function NewContractPage() {
   useAuth();
@@ -25,6 +26,7 @@ export default function NewContractPage() {
   const [formData, setFormData] = useState<ContractFormData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   useEffect(() => {
     fetch("/api/templates")
@@ -34,11 +36,38 @@ export default function NewContractPage() {
       .finally(() => setTemplatesLoading(false));
   }, []);
 
+  // Restore an auto-saved draft, if any, once on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as { formData: ContractFormData; step: number };
+        setFormData(saved.formData);
+        setStep(saved.step);
+        toast.success("Đã khôi phục bản nháp đang nhập dở");
+      }
+    } catch {
+      // Ignore corrupt/unreadable draft data
+    } finally {
+      setDraftRestored(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save the draft as the user fills in the wizard
+  useEffect(() => {
+    if (!draftRestored) return; // avoid overwriting the saved draft before it's restored
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ formData, step }));
+  }, [formData, step, draftRestored]);
+
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === formData.templateId),
     [templates, formData.templateId],
   );
 
+  const updateContractNo = (value: string) => {
+    setFormData((prev) => ({ ...prev, contractNo: value }));
+  };
   const updateLandlord = (field: keyof ContractFormData["landlord"], value: string) => {
     setFormData((prev) => ({ ...prev, landlord: { ...prev.landlord, [field]: value } }));
   };
@@ -140,6 +169,7 @@ export default function NewContractPage() {
         return;
       }
       toast.success("Đã tạo hợp đồng thành công!");
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
       router.push(`/contracts/${result.contract.id}`);
     } catch {
       toast.error("Không thể kết nối đến máy chủ");
@@ -159,6 +189,9 @@ export default function NewContractPage() {
             loading={templatesLoading}
             selectedId={formData.templateId}
             onSelect={(id) => setFormData((prev) => ({ ...prev, templateId: id }))}
+            contractNo={formData.contractNo}
+            contractNoError={errors.contractNo}
+            onContractNoChange={updateContractNo}
           />
         )}
         {step === 1 && (

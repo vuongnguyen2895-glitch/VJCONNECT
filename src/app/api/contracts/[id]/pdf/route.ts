@@ -141,10 +141,13 @@ function generateContractHTML(data: {
   deposit: any;
 }) {
   const today = new Date();
-  const utilitiesMap: Record<string, string> = {
-    tenant: "Bên B tự thanh toán theo chỉ số đồng hồ thực tế",
-    included: "Đã bao gồm trong giá thuê",
-    fixed: "Khoán cố định hàng tháng theo thỏa thuận",
+  const costMethodLabel = (method: string): string => {
+    const map: Record<string, string> = {
+      tenant: "Bên B tự thanh toán theo chỉ số thực tế",
+      included: "Đã bao gồm trong giá thuê",
+      fixed: "Khoán cố định hàng tháng theo thỏa thuận",
+    };
+    return map[method] || map.tenant;
   };
 
   const rentPeriods: RentPeriod[] = Array.isArray(data.terms.rentPeriods) ? data.terms.rentPeriods : [];
@@ -227,6 +230,7 @@ function generateContractHTML(data: {
   <p class="indent">Bên A là chủ sử dụng/sở hữu hợp pháp tài sản cho thuê tại địa chỉ: <strong>${data.property.address || "___"}</strong>${data.property.area ? `, diện tích ${data.property.area} m²` : ""}${data.property.floor ? `, ${data.property.floor}` : ""}${data.property.rooms ? `, ${data.property.rooms}` : ""}${data.property.furniture ? `, nội thất: ${data.property.furniture}` : ""}.</p>
   ${legalDocLines.length > 0 ? `<p class="indent">Theo các giấy tờ pháp lý sau: ${legalDocLines.join("; ")}.</p>` : ""}
   <p class="indent">Bằng hợp đồng này, Bên A đồng ý cho Bên B thuê, Bên B đồng ý thuê toàn bộ tài sản nêu trên theo hiện trạng thực tế.</p>
+  ${data.property.purpose ? `<p class="indent">Mục đích thuê: ${data.property.purpose}.</p>` : ""}
 
   <h2>Điều 2: Thời hạn thuê, giá thuê</h2>
   <table>
@@ -239,8 +243,15 @@ function generateContractHTML(data: {
   ${vatRate ? `<p class="indent">Giá thuê nêu trên chưa bao gồm thuế VAT. Bên B có trách nhiệm thanh toán thêm ${vatRate}% VAT trên đơn giá thuê tương ứng từng giai đoạn.</p>` : ""}
   <p class="indent">Giá thuê không bao gồm phí quản lý, tiền điện, nước, internet và các chi phí dịch vụ khác phát sinh trong quá trình sử dụng.</p>
 
-  <h2>Điều 3: Chi phí điện, nước và dịch vụ</h2>
-  <p class="indent">${utilitiesMap[data.terms.utilities] || utilitiesMap.tenant}</p>
+  <h2>Điều 3: Chi phí quản lý, điện, nước, internet</h2>
+  <table>
+    <tr><td>Phí quản lý:</td><td>${costMethodLabel(data.terms.costManagement)}</td></tr>
+    <tr><td>Tiền điện:</td><td>${costMethodLabel(data.terms.costElectricity)}</td></tr>
+    <tr><td>Tiền nước:</td><td>${costMethodLabel(data.terms.costWater)}</td></tr>
+    <tr><td>Internet:</td><td>${costMethodLabel(data.terms.costInternet)}</td></tr>
+  </table>
+  ${data.terms.otherAgreement ? `<p class="indent">Thỏa thuận khác: ${data.terms.otherAgreement}.</p>` : ""}
+  <p class="indent">Giá thuê nêu trên không bao gồm thuế thu nhập cá nhân (TNCN) từ hoạt động cho thuê tài sản. Thuế TNCN phát sinh (nếu có) do Bên A chịu trách nhiệm kê khai và nộp theo quy định pháp luật.</p>
 
   <h2>Điều 4: Tiền đặt cọc và phương thức thanh toán</h2>
   <table>
@@ -255,7 +266,13 @@ function generateContractHTML(data: {
   <p class="indent">1. Bàn giao tài sản thuê cho Bên B đúng thời hạn và tình trạng đã thỏa thuận.</p>
   <p class="indent">2. Đảm bảo quyền sử dụng ổn định cho Bên B trong suốt thời hạn thuê, không đơn phương chấm dứt trước hạn trừ trường hợp bất khả kháng.</p>
   <p class="indent">3. Bảo trì, sửa chữa những hư hỏng lớn không do lỗi của Bên B gây ra.</p>
-  <p class="indent">4. Có quyền yêu cầu Bên B thanh toán tiền thuê đầy đủ, đúng hạn; đơn phương chấm dứt hợp đồng và yêu cầu bồi thường nếu Bên B không trả tiền thuê liên tiếp từ 3 tháng trở lên, sử dụng sai mục đích, hoặc có hành vi vi phạm pháp luật nghiêm trọng tại tài sản thuê.</p>
+  <p class="indent">4. Có quyền yêu cầu Bên B thanh toán tiền thuê đầy đủ, đúng hạn.</p>
+  <p class="indent">5. Có quyền đơn phương chấm dứt hợp đồng và yêu cầu bồi thường thiệt hại nếu Bên B có một trong các hành vi sau:</p>
+  <p class="indent">&nbsp;&nbsp;a) Không trả tiền thuê liên tiếp từ 3 tháng trở lên mà không có lý do chính đáng;</p>
+  <p class="indent">&nbsp;&nbsp;b) Sử dụng tài sản không đúng mục đích thuê đã thỏa thuận;</p>
+  <p class="indent">&nbsp;&nbsp;c) Tự ý đục phá, cơi nới, cải tạo, phá dỡ tài sản đang thuê khi chưa được Bên A đồng ý;</p>
+  <p class="indent">&nbsp;&nbsp;d) Gây mất trật tự, ảnh hưởng nghiêm trọng đến sinh hoạt của những người xung quanh dù đã được nhắc nhở;</p>
+  <p class="indent">&nbsp;&nbsp;đ) Có hành vi vi phạm pháp luật nghiêm trọng tại tài sản thuê — trường hợp này Bên A có quyền chấm dứt hợp đồng ngay lập tức, không cần báo trước, đồng thời yêu cầu Bên B chịu trách nhiệm trước cơ quan nhà nước có thẩm quyền.</p>
 
   <h2>Điều 6: Quyền và nghĩa vụ của Bên B</h2>
   <p class="indent">1. Thanh toán tiền thuê đầy đủ, đúng hạn theo thỏa thuận.</p>
@@ -263,6 +280,8 @@ function generateContractHTML(data: {
   <p class="indent">3. Không được cho thuê lại, chuyển nhượng nếu không có sự đồng ý bằng văn bản của Bên A; không tự ý cải tạo, phá dỡ khi chưa được đồng ý.</p>
   <p class="indent">4. Trả lại tài sản đúng thời hạn và trong tình trạng ban đầu (trừ hao mòn tự nhiên) khi hết hạn hoặc chấm dứt hợp đồng.</p>
   <p class="indent">5. Tự chịu trách nhiệm tuân thủ các quy định pháp luật hiện hành liên quan đến việc sử dụng tài sản thuê.</p>
+  <p class="indent">6. Được ưu tiên ký hợp đồng thuê tiếp nếu hết hạn thuê mà tài sản vẫn tiếp tục được cho thuê.</p>
+  <p class="indent">7. Được tháo dỡ và mang đi các tài sản, trang thiết bị do Bên B tự lắp đặt khi hết hạn hoặc chấm dứt hợp đồng, miễn không làm ảnh hưởng đến kết cấu tài sản thuê.</p>
 
   <h2>Điều 7: Chấm dứt hợp đồng</h2>
   <p class="indent">1. Hợp đồng chấm dứt khi hết thời hạn thuê mà không được gia hạn.</p>

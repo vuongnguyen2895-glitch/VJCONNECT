@@ -40,6 +40,12 @@ interface ContractDetail {
   activities: { id: string; action: string; actorName: string | null; createdAt: string }[];
 }
 
+const COST_METHOD_LABELS: Record<string, string> = {
+  tenant: "Tự trả theo chỉ số",
+  included: "Đã bao gồm giá thuê",
+  fixed: "Khoán cố định",
+};
+
 const ACTIVITY_LABELS: Record<string, string> = {
   created: "đã tạo hợp đồng",
   updated: "đã cập nhật hợp đồng",
@@ -287,12 +293,28 @@ export default function ContractDetailPage() {
           <Row label="Địa chỉ" value={property.address ?? "—"} />
           <Row label="Diện tích" value={property.area ? `${property.area} m²` : "—"} />
           <Row label="Thời hạn" value={terms.duration ? `${terms.duration} tháng` : "—"} />
+          {property.purpose && <Row label="Mục đích thuê" value={property.purpose} />}
           {property.landCertNo && <Row label="Giấy CNQSDĐ" value={property.landCertNo} />}
           {terms.vatRate && <Row label="VAT" value={`${terms.vatRate}%`} />}
           {terms.bankAccountNumber && (
             <Row label="Tài khoản nhận tiền" value={`${terms.bankAccountNumber} (${terms.bankName || "—"})`} />
           )}
         </dl>
+
+        {(terms.costManagement || terms.costElectricity || terms.costWater || terms.costInternet) && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <p className="text-xs font-semibold text-slate-500">Chi phí quản lý, điện, nước, internet</p>
+            <dl className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+              <Row label="Quản lý" value={COST_METHOD_LABELS[terms.costManagement] ?? "—"} />
+              <Row label="Điện" value={COST_METHOD_LABELS[terms.costElectricity] ?? "—"} />
+              <Row label="Nước" value={COST_METHOD_LABELS[terms.costWater] ?? "—"} />
+              <Row label="Internet" value={COST_METHOD_LABELS[terms.costInternet] ?? "—"} />
+            </dl>
+            {terms.otherAgreement && (
+              <p className="mt-1.5 text-sm text-slate-600">Thỏa thuận khác: {terms.otherAgreement}</p>
+            )}
+          </div>
+        )}
 
         {Array.isArray(terms.rentPeriods) && terms.rentPeriods.length > 0 && (
           <div className="mt-4 border-t border-slate-100 pt-4">

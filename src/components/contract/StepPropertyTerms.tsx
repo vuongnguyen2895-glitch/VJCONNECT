@@ -1,6 +1,6 @@
-import { Banknote, Calendar, CalendarClock, FileText, Landmark, MapPin, Plus, Ruler, Sofa, Trash2, Wallet } from "lucide-react";
+import { Banknote, Calendar, CalendarClock, FileText, Landmark, MapPin, Plus, Ruler, Sofa, Target, Trash2, Wallet } from "lucide-react";
 import FormField from "./FormField";
-import type { ContractFormData, RentPeriodFormData } from "@/types";
+import type { ContractFormData, CostMethod, RentPeriodFormData } from "@/types";
 
 interface StepPropertyTermsProps {
   property: ContractFormData["property"];
@@ -13,10 +13,19 @@ interface StepPropertyTermsProps {
   onRentPeriodChange: (index: number, field: keyof RentPeriodFormData, value: string) => void;
 }
 
-const UTILITY_OPTIONS: { value: ContractFormData["terms"]["utilities"]; label: string }[] = [
-  { value: "tenant", label: "Bên thuê tự trả theo chỉ số" },
-  { value: "included", label: "Đã bao gồm trong giá thuê" },
-  { value: "fixed", label: "Khoán cố định hàng tháng" },
+const COST_METHOD_OPTIONS: { value: CostMethod; label: string }[] = [
+  { value: "tenant", label: "Tự trả theo chỉ số" },
+  { value: "included", label: "Đã bao gồm giá thuê" },
+  { value: "fixed", label: "Khoán cố định" },
+];
+
+type CostField = "costManagement" | "costElectricity" | "costWater" | "costInternet";
+
+const COST_CATEGORIES: { field: CostField; label: string }[] = [
+  { field: "costManagement", label: "Phí quản lý" },
+  { field: "costElectricity", label: "Điện" },
+  { field: "costWater", label: "Nước" },
+  { field: "costInternet", label: "Internet" },
 ];
 
 export default function StepPropertyTerms({
@@ -79,6 +88,16 @@ export default function StepPropertyTerms({
               className="input pl-10"
             />
           </FormField>
+          <div className="sm:col-span-2">
+            <FormField label="Mục đích thuê" icon={Target} error={errors.purpose} optional>
+              <input
+                value={property.purpose}
+                onChange={(e) => onPropertyChange("purpose", e.target.value)}
+                placeholder="Để ở / Kinh doanh / Văn phòng..."
+                className="input pl-10"
+              />
+            </FormField>
+          </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-200 p-4">
@@ -191,23 +210,43 @@ export default function StepPropertyTerms({
           </FormField>
         </div>
 
-        <div className="mt-4">
-          <label className="label">Chi phí điện, nước</label>
-          <div className="flex flex-wrap gap-2">
-            {UTILITY_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onTermsChange("utilities", option.value)}
-                className={`rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-                  terms.utilities === option.value
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                {option.label}
-              </button>
+        <div className="mt-6 rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-700">Chi phí quản lý, điện, nước, internet</p>
+          <p className="mt-0.5 text-xs text-slate-400">Chọn cách tính cho từng khoản chi phí.</p>
+
+          <div className="mt-4 space-y-4">
+            {COST_CATEGORIES.map((category) => (
+              <div key={category.field}>
+                <p className="text-xs font-semibold text-slate-500">{category.label}</p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {COST_METHOD_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onTermsChange(category.field, option.value)}
+                      className={`rounded-xl border-2 px-3.5 py-2 text-xs font-medium transition-colors ${
+                        terms[category.field] === option.value
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-slate-200 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
+          </div>
+
+          <div className="mt-4">
+            <FormField label="Thỏa thuận khác (nếu có)" icon={FileText} error={errors.otherAgreement} optional>
+              <input
+                value={terms.otherAgreement}
+                onChange={(e) => onTermsChange("otherAgreement", e.target.value)}
+                placeholder="VD: Bên B tự lắp đặt và thanh toán chi phí truyền hình cáp"
+                className="input pl-10"
+              />
+            </FormField>
           </div>
         </div>
 

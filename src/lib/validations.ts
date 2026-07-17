@@ -85,6 +85,7 @@ export const propertySchema = z.object({
   floor: z.string().optional(),
   rooms: z.string().optional(),
   furniture: z.string().optional(),
+  purpose: z.string().optional(), // Mục đích thuê
   // Legal property description (optional — matches a formal land-use document if available)
   plotNo: z.string().optional(), // Thửa đất số
   mapSheetNo: z.string().optional(), // Tờ bản đồ số
@@ -103,6 +104,8 @@ export const rentPeriodSchema = z.object({
   amount: z.string().min(1, "Vui lòng nhập giá thuê"),
 });
 
+const costMethodSchema = z.enum(["tenant", "included", "fixed"]).default("tenant");
+
 export const termsSchema = z.object({
   rentAmount: z.string().min(1, "Vui lòng nhập giá thuê"),
   rentPeriods: z.array(rentPeriodSchema).optional(),
@@ -111,7 +114,11 @@ export const termsSchema = z.object({
   paymentDate: z.string().optional(),
   duration: z.string().default("12"),
   startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
-  utilities: z.enum(["tenant", "included", "fixed"]).default("tenant"),
+  costManagement: costMethodSchema,
+  costElectricity: costMethodSchema,
+  costWater: costMethodSchema,
+  costInternet: costMethodSchema,
+  otherAgreement: z.string().optional(),
   bankAccountName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   bankName: z.string().optional(),
@@ -119,6 +126,13 @@ export const termsSchema = z.object({
 
 export const createContractSchema = z.object({
   templateId: z.string().min(1, "Vui lòng chọn mẫu hợp đồng"),
+  contractNo: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z
+      .string()
+      .regex(/^[A-Za-z0-9/_-]+$/, "Số hợp đồng chỉ gồm chữ, số, dấu / _ -")
+      .optional(),
+  ),
   landlord: landlordSchema,
   tenant: tenantSchema,
   property: propertySchema,

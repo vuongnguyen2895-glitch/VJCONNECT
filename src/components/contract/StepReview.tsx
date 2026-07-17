@@ -11,10 +11,10 @@ interface StepReviewProps {
   onSubmit: () => void;
 }
 
-const UTILITY_LABELS: Record<string, string> = {
-  tenant: "Bên thuê tự trả theo chỉ số",
-  included: "Đã bao gồm trong giá thuê",
-  fixed: "Khoán cố định hàng tháng",
+const COST_METHOD_LABELS: Record<string, string> = {
+  tenant: "Tự trả theo chỉ số",
+  included: "Đã bao gồm giá thuê",
+  fixed: "Khoán cố định",
 };
 
 export default function StepReview({ data, template, submitting, onEditStep, onSubmit }: StepReviewProps) {
@@ -28,6 +28,7 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
           <p className="text-sm text-slate-700">
             {template?.icon} {template?.name}
           </p>
+          {data.contractNo && <p className="mt-1 font-mono text-xs text-slate-500">Số hợp đồng: {data.contractNo}</p>}
         </ReviewSection>
 
         <ReviewSection title="Bên cho thuê (Bên A)" onEdit={() => onEditStep(1)}>
@@ -42,17 +43,30 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
             <Row label="Địa chỉ" value={data.property.address} />
             <Row label="Diện tích" value={data.property.area ? `${data.property.area} m²` : "—"} />
+            {data.property.purpose && <Row label="Mục đích thuê" value={data.property.purpose} />}
             {data.property.landCertNo && <Row label="Giấy CNQSDĐ" value={data.property.landCertNo} />}
             <Row label="Giá thuê giai đoạn đầu" value={data.terms.rentAmount ? formatVND(data.terms.rentAmount) : "—"} />
             {data.terms.vatRate && <Row label="VAT" value={`${data.terms.vatRate}%`} />}
             <Row label="Đặt cọc" value={data.terms.deposit ? formatVND(data.terms.deposit) : "—"} />
             <Row label="Thời hạn" value={`${data.terms.duration} tháng`} />
             <Row label="Ngày bắt đầu" value={data.terms.startDate || "—"} />
-            <Row label="Điện nước" value={UTILITY_LABELS[data.terms.utilities]} />
             {data.terms.bankAccountNumber && (
               <Row label="Tài khoản nhận tiền" value={`${data.terms.bankAccountNumber} (${data.terms.bankName || "—"})`} />
             )}
           </dl>
+
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="text-xs font-semibold text-slate-500">Chi phí quản lý, điện, nước, internet</p>
+            <dl className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <Row label="Quản lý" value={COST_METHOD_LABELS[data.terms.costManagement]} />
+              <Row label="Điện" value={COST_METHOD_LABELS[data.terms.costElectricity]} />
+              <Row label="Nước" value={COST_METHOD_LABELS[data.terms.costWater]} />
+              <Row label="Internet" value={COST_METHOD_LABELS[data.terms.costInternet]} />
+            </dl>
+            {data.terms.otherAgreement && (
+              <p className="mt-1.5 text-sm text-slate-600">Thỏa thuận khác: {data.terms.otherAgreement}</p>
+            )}
+          </div>
 
           {data.terms.rentPeriods.length > 0 && (
             <div className="mt-3 border-t border-slate-100 pt-3">

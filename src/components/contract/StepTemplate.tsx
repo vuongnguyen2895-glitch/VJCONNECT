@@ -1,4 +1,5 @@
-import { Loader2 } from "lucide-react";
+import { Hash, Loader2 } from "lucide-react";
+import FormField from "./FormField";
 import type { Template } from "@/types";
 
 interface StepTemplateProps {
@@ -6,9 +7,20 @@ interface StepTemplateProps {
   loading: boolean;
   selectedId: string;
   onSelect: (id: string) => void;
+  contractNo: string;
+  contractNoError?: string;
+  onContractNoChange: (value: string) => void;
 }
 
-export default function StepTemplate({ templates, loading, selectedId, onSelect }: StepTemplateProps) {
+export default function StepTemplate({
+  templates,
+  loading,
+  selectedId,
+  onSelect,
+  contractNo,
+  contractNoError,
+  onContractNoChange,
+}: StepTemplateProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-slate-400">
@@ -21,6 +33,18 @@ export default function StepTemplate({ templates, loading, selectedId, onSelect 
     <div>
       <h2 className="text-lg font-bold text-slate-900">Chọn mẫu hợp đồng</h2>
       <p className="mt-1 text-sm text-slate-500">Chọn đúng loại tài sản để áp dụng điều khoản phù hợp.</p>
+
+      <div className="mt-6 max-w-xs">
+        <FormField label="Số hợp đồng" icon={Hash} error={contractNoError} optional>
+          <input
+            value={contractNo}
+            onChange={(e) => onContractNoChange(e.target.value)}
+            placeholder="VD: 201125/HĐTN"
+            className="input pl-10"
+          />
+        </FormField>
+        <p className="mt-1.5 text-xs text-slate-400">Để trống sẽ tự động tạo theo định dạng VJC-2026-00001.</p>
+      </div>
 
       {templates.length === 0 ? (
         <p className="mt-6 text-sm text-slate-400">Không có mẫu hợp đồng nào khả dụng.</p>
