@@ -1,4 +1,4 @@
-import { ContractStatus, PartyRole, Plan, TemplateCategory } from "@prisma/client";
+import { ContractStatus, PartyKind, PartyRole, Plan, TemplateCategory } from "@prisma/client";
 
 export interface User {
   id: string;
@@ -22,10 +22,17 @@ export interface Template {
 export interface ContractParty {
   id: string;
   role: PartyRole;
+  partyKind: PartyKind;
   name: string;
   cccd: string | null;
   phone: string | null;
   email: string | null;
+  dob: string | null;
+  idIssueDate: string | null;
+  idIssuePlace: string | null;
+  businessRegNo: string | null;
+  representativeName: string | null;
+  representativePosition: string | null;
   signedAt: string | null;
 }
 
@@ -54,41 +61,102 @@ export interface DashboardStats {
 }
 
 // Contract form wizard steps
+export interface PartyFormData {
+  partyKind: "INDIVIDUAL" | "COMPANY";
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  // Individual-only
+  cccd: string;
+  dob: string;
+  idIssueDate: string;
+  idIssuePlace: string;
+  // Company-only
+  businessRegNo: string;
+  representativeName: string;
+  representativePosition: string;
+}
+
+export interface RentPeriodFormData {
+  fromDate: string;
+  toDate: string;
+  amount: string;
+}
+
 export interface ContractFormData {
   templateId: string;
-  landlord: {
-    name: string;
-    cccd: string;
-    phone: string;
-    address: string;
-  };
-  tenant: {
-    name: string;
-    cccd: string;
-    phone: string;
-    email: string;
-  };
+  landlord: PartyFormData;
+  tenant: PartyFormData;
   property: {
     address: string;
     area: string;
     floor: string;
     rooms: string;
     furniture: string;
+    plotNo: string;
+    mapSheetNo: string;
+    landCertNo: string;
+    landCertDate: string;
+    landCertIssuer: string;
   };
   terms: {
     rentAmount: string;
+    rentPeriods: RentPeriodFormData[];
+    vatRate: string;
     deposit: string;
     paymentDate: string;
     duration: string;
     startDate: string;
     utilities: "tenant" | "included" | "fixed";
+    bankAccountName: string;
+    bankAccountNumber: string;
+    bankName: string;
   };
 }
 
+const INITIAL_PARTY_DATA: PartyFormData = {
+  partyKind: "INDIVIDUAL",
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  cccd: "",
+  dob: "",
+  idIssueDate: "",
+  idIssuePlace: "",
+  businessRegNo: "",
+  representativeName: "",
+  representativePosition: "",
+};
+
 export const INITIAL_FORM_DATA: ContractFormData = {
   templateId: "",
-  landlord: { name: "", cccd: "", phone: "", address: "" },
-  tenant: { name: "", cccd: "", phone: "", email: "" },
-  property: { address: "", area: "", floor: "", rooms: "", furniture: "" },
-  terms: { rentAmount: "", deposit: "", paymentDate: "5", duration: "12", startDate: "", utilities: "tenant" },
+  landlord: { ...INITIAL_PARTY_DATA },
+  tenant: { ...INITIAL_PARTY_DATA },
+  property: {
+    address: "",
+    area: "",
+    floor: "",
+    rooms: "",
+    furniture: "",
+    plotNo: "",
+    mapSheetNo: "",
+    landCertNo: "",
+    landCertDate: "",
+    landCertIssuer: "",
+  },
+  terms: {
+    rentAmount: "",
+    rentPeriods: [],
+    vatRate: "",
+    deposit: "",
+    paymentDate: "5",
+    duration: "12",
+    startDate: "",
+    utilities: "tenant",
+    bankAccountName: "",
+    bankAccountNumber: "",
+    bankName: "",
+  },
 };

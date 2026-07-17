@@ -5,17 +5,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Send, Trash2, Wallet } from "lucide-react";
-import type { ContractStatus, PartyRole } from "@prisma/client";
+import type { ContractStatus, PartyKind, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ContractParty {
   id: string;
   role: PartyRole;
+  partyKind: PartyKind;
   name: string;
   cccd: string | null;
   phone: string | null;
   email: string | null;
+  idIssuePlace: string | null;
+  businessRegNo: string | null;
+  representativeName: string | null;
+  representativePosition: string | null;
   signedAt: string | null;
   signingUrl: string | null;
 }
@@ -25,7 +30,7 @@ interface ContractDetail {
   contractNo: string | null;
   status: ContractStatus;
   title: string | null;
-  dataJson: { property?: Record<string, string>; terms?: Record<string, string> };
+  dataJson: { property?: Record<string, any>; terms?: Record<string, any> };
   startDate: string | null;
   endDate: string | null;
   rentAmount: string | null;
@@ -282,7 +287,25 @@ export default function ContractDetailPage() {
           <Row label="Địa chỉ" value={property.address ?? "—"} />
           <Row label="Diện tích" value={property.area ? `${property.area} m²` : "—"} />
           <Row label="Thời hạn" value={terms.duration ? `${terms.duration} tháng` : "—"} />
+          {property.landCertNo && <Row label="Giấy CNQSDĐ" value={property.landCertNo} />}
+          {terms.vatRate && <Row label="VAT" value={`${terms.vatRate}%`} />}
+          {terms.bankAccountNumber && (
+            <Row label="Tài khoản nhận tiền" value={`${terms.bankAccountNumber} (${terms.bankName || "—"})`} />
+          )}
         </dl>
+
+        {Array.isArray(terms.rentPeriods) && terms.rentPeriods.length > 0 && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <p className="text-xs font-semibold text-slate-500">Điều chỉnh giá theo giai đoạn</p>
+            <ul className="mt-1.5 space-y-1">
+              {terms.rentPeriods.map((period: any, index: number) => (
+                <li key={index} className="text-sm text-slate-600">
+                  {period.fromDate || "—"} → {period.toDate || "—"}: {period.amount ? formatVND(period.amount) : "—"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="card p-6">
@@ -342,13 +365,32 @@ function PartyCard({ title, party }: { title: string; party?: ContractParty }) {
       {party ? (
         <dl className="mt-4 space-y-1.5 text-sm">
           <div className="flex justify-between">
-            <dt className="text-slate-400">Họ tên</dt>
+            <dt className="text-slate-400">{party.partyKind === "COMPANY" ? "Tên công ty" : "Họ tên"}</dt>
             <dd className="font-medium text-slate-700">{party.name}</dd>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-slate-400">CCCD/CMND</dt>
-            <dd className="font-medium text-slate-700">{party.cccd ?? "—"}</dd>
-          </div>
+          {party.partyKind === "COMPANY" ? (
+            <>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Mã số DN</dt>
+                <dd className="font-medium text-slate-700">{party.businessRegNo ?? "—"}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Người đại diện</dt>
+                <dd className="font-medium text-slate-700">{party.representativeName ?? "—"}</dd>
+              </div>
+              {party.representativePosition && (
+                <div className="flex justify-between">
+                  <dt className="text-slate-400">Chức vụ</dt>
+                  <dd className="font-medium text-slate-700">{party.representativePosition}</dd>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex justify-between">
+              <dt className="text-slate-400">CCCD/CMND</dt>
+              <dd className="font-medium text-slate-700">{party.cccd ?? "—"}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-slate-400">Điện thoại</dt>
             <dd className="font-medium text-slate-700">{party.phone ?? "—"}</dd>

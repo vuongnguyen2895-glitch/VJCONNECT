@@ -22,25 +22,62 @@ export const loginSchema = z.object({
 });
 
 // ============================================================
-// CONTRACT
+// CONTRACT — PARTIES (individual or company)
 // ============================================================
 
-export const landlordSchema = z.object({
-  name: z.string().min(2, "Vui lòng nhập họ tên"),
-  cccd: z.string().min(9, "Số CCCD/CMND không hợp lệ"),
+const emailOptional = z.preprocess(
+  (val) => (val === "" ? undefined : val),
+  z.string().email("Email không hợp lệ").optional(),
+);
+
+const partyBaseSchema = z.object({
+  partyKind: z.enum(["INDIVIDUAL", "COMPANY"]).default("INDIVIDUAL"),
+  name: z.string().min(2, "Vui lòng nhập họ tên / tên công ty"),
   phone: z.string().regex(PHONE_REGEX, "Số điện thoại không hợp lệ"),
+  email: emailOptional,
   address: z.string().optional(),
+  // Individual-only
+  cccd: z.string().optional(),
+  dob: z.string().optional(),
+  idIssueDate: z.string().optional(),
+  idIssuePlace: z.string().optional(),
+  // Company-only
+  businessRegNo: z.string().optional(),
+  representativeName: z.string().optional(),
+  representativePosition: z.string().optional(),
 });
 
-export const tenantSchema = z.object({
-  name: z.string().min(2, "Vui lòng nhập họ tên"),
-  cccd: z.string().min(9, "Số CCCD/CMND không hợp lệ"),
-  phone: z.string().regex(PHONE_REGEX, "Số điện thoại không hợp lệ"),
-  email: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.string().email("Email không hợp lệ").optional(),
-  ),
-});
+function withPartyKindRefinement(schema: typeof partyBaseSchema) {
+  return schema.superRefine((data, ctx) => {
+    if (data.partyKind === "INDIVIDUAL") {
+      if (!data.cccd || data.cccd.trim().length < 9) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["cccd"], message: "Số CCCD/CMND không hợp lệ" });
+      }
+    } else {
+      if (!data.businessRegNo || data.businessRegNo.trim().length < 5) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["businessRegNo"],
+          message: "Vui lòng nhập mã số doanh nghiệp",
+        });
+      }
+      if (!data.representativeName || data.representativeName.trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["representativeName"],
+          message: "Vui lòng nhập người đại diện",
+        });
+      }
+    }
+  });
+}
+
+export const landlordSchema = withPartyKindRefinement(partyBaseSchema);
+export const tenantSchema = withPartyKindRefinement(partyBaseSchema);
+
+// ============================================================
+// CONTRACT — PROPERTY
+// ============================================================
 
 export const propertySchema = z.object({
   address: z.string().min(5, "Vui lòng nhập địa chỉ"),
@@ -48,15 +85,36 @@ export const propertySchema = z.object({
   floor: z.string().optional(),
   rooms: z.string().optional(),
   furniture: z.string().optional(),
+  // Legal property description (optional — matches a formal land-use document if available)
+  plotNo: z.string().optional(), // Thửa đất số
+  mapSheetNo: z.string().optional(), // Tờ bản đồ số
+  landCertNo: z.string().optional(), // Số giấy chứng nhận QSDĐ
+  landCertDate: z.string().optional(), // Ngày cấp
+  landCertIssuer: z.string().optional(), // Nơi cấp
+});
+
+// ============================================================
+// CONTRACT — TERMS (tiered rent, deposit, bank info)
+// ============================================================
+
+export const rentPeriodSchema = z.object({
+  fromDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu giai đoạn"),
+  toDate: z.string().optional(),
+  amount: z.string().min(1, "Vui lòng nhập giá thuê"),
 });
 
 export const termsSchema = z.object({
   rentAmount: z.string().min(1, "Vui lòng nhập giá thuê"),
+  rentPeriods: z.array(rentPeriodSchema).optional(),
+  vatRate: z.string().optional(), // e.g. "5" for 5% VAT, blank = not applicable
   deposit: z.string().optional(),
   paymentDate: z.string().optional(),
   duration: z.string().default("12"),
   startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
   utilities: z.enum(["tenant", "included", "fixed"]).default("tenant"),
+  bankAccountName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankName: z.string().optional(),
 });
 
 export const createContractSchema = z.object({

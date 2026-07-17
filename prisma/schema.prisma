@@ -135,11 +135,22 @@ model ContractParty {
   userId       String?   @map("user_id") // nullable: tenant may not have account yet
 
   // Party info (snapshot at signing time)
-  name         String
+  partyKind    PartyKind @default(INDIVIDUAL) @map("party_kind")
+  name         String    // person's full name, or company name if partyKind = COMPANY
   cccd         String?
   phone        String?
   email        String?
   address      String?
+
+  // Individual-only fields
+  dob             String?   @map("dob") // Sinh năm (year or free-text date of birth)
+  idIssueDate     DateTime? @map("id_issue_date") // Ngày cấp CCCD
+  idIssuePlace    String?   @map("id_issue_place") // Nơi cấp CCCD
+
+  // Company-only fields
+  businessRegNo          String? @map("business_reg_no") // Mã số doanh nghiệp
+  representativeName     String? @map("representative_name") // Người đại diện
+  representativePosition String? @map("representative_position") // Chức vụ
 
   // Signing
   signedAt     DateTime? @map("signed_at")
@@ -242,6 +253,11 @@ enum ContractStatus {
 enum PartyRole {
   LANDLORD   // Bên cho thuê (Bên A)
   TENANT     // Bên thuê (Bên B)
+}
+
+enum PartyKind {
+  INDIVIDUAL // Cá nhân
+  COMPANY    // Công ty
 }
 
 enum FileType {

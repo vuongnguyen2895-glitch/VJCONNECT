@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, Loader2, Pencil } from "lucide-react";
 import { formatVND } from "@/lib/contract-utils";
-import type { ContractFormData, Template } from "@/types";
+import type { ContractFormData, PartyFormData, Template } from "@/types";
 
 interface StepReviewProps {
   data: ContractFormData;
@@ -31,33 +31,41 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
         </ReviewSection>
 
         <ReviewSection title="Bên cho thuê (Bên A)" onEdit={() => onEditStep(1)}>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-            <Row label="Họ tên" value={data.landlord.name} />
-            <Row label="CCCD/CMND" value={data.landlord.cccd} />
-            <Row label="Điện thoại" value={data.landlord.phone} />
-            <Row label="Địa chỉ" value={data.landlord.address || "—"} />
-          </dl>
+          <PartyRows party={data.landlord} />
         </ReviewSection>
 
         <ReviewSection title="Bên thuê (Bên B)" onEdit={() => onEditStep(2)}>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-            <Row label="Họ tên" value={data.tenant.name} />
-            <Row label="CCCD/CMND" value={data.tenant.cccd} />
-            <Row label="Điện thoại" value={data.tenant.phone} />
-            <Row label="Email" value={data.tenant.email || "—"} />
-          </dl>
+          <PartyRows party={data.tenant} />
         </ReviewSection>
 
         <ReviewSection title="Tài sản & điều khoản" onEdit={() => onEditStep(3)}>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
             <Row label="Địa chỉ" value={data.property.address} />
             <Row label="Diện tích" value={data.property.area ? `${data.property.area} m²` : "—"} />
-            <Row label="Giá thuê" value={data.terms.rentAmount ? formatVND(data.terms.rentAmount) : "—"} />
+            {data.property.landCertNo && <Row label="Giấy CNQSDĐ" value={data.property.landCertNo} />}
+            <Row label="Giá thuê giai đoạn đầu" value={data.terms.rentAmount ? formatVND(data.terms.rentAmount) : "—"} />
+            {data.terms.vatRate && <Row label="VAT" value={`${data.terms.vatRate}%`} />}
             <Row label="Đặt cọc" value={data.terms.deposit ? formatVND(data.terms.deposit) : "—"} />
             <Row label="Thời hạn" value={`${data.terms.duration} tháng`} />
             <Row label="Ngày bắt đầu" value={data.terms.startDate || "—"} />
             <Row label="Điện nước" value={UTILITY_LABELS[data.terms.utilities]} />
+            {data.terms.bankAccountNumber && (
+              <Row label="Tài khoản nhận tiền" value={`${data.terms.bankAccountNumber} (${data.terms.bankName || "—"})`} />
+            )}
           </dl>
+
+          {data.terms.rentPeriods.length > 0 && (
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold text-slate-500">Điều chỉnh giá theo giai đoạn</p>
+              <ul className="mt-1.5 space-y-1">
+                {data.terms.rentPeriods.map((period, index) => (
+                  <li key={index} className="text-sm text-slate-600">
+                    {period.fromDate || "—"} → {period.toDate || "—"}: {period.amount ? formatVND(period.amount) : "—"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </ReviewSection>
       </div>
 
@@ -71,6 +79,31 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
         )}
       </button>
     </div>
+  );
+}
+
+function PartyRows({ party }: { party: PartyFormData }) {
+  if (party.partyKind === "COMPANY") {
+    return (
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+        <Row label="Tên công ty" value={party.name} />
+        <Row label="Mã số DN" value={party.businessRegNo || "—"} />
+        <Row label="Người đại diện" value={party.representativeName || "—"} />
+        <Row label="Chức vụ" value={party.representativePosition || "—"} />
+        <Row label="Điện thoại" value={party.phone} />
+        <Row label="Địa chỉ" value={party.address || "—"} />
+      </dl>
+    );
+  }
+
+  return (
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+      <Row label="Họ tên" value={party.name} />
+      <Row label="CCCD/CMND" value={party.cccd || "—"} />
+      {party.idIssuePlace && <Row label="Nơi cấp" value={party.idIssuePlace} />}
+      <Row label="Điện thoại" value={party.phone} />
+      <Row label="Địa chỉ" value={party.address || "—"} />
+    </dl>
   );
 }
 

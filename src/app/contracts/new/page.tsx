@@ -6,11 +6,10 @@ import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { createContractSchema, landlordSchema, propertySchema, tenantSchema, termsSchema } from "@/lib/validations";
-import { INITIAL_FORM_DATA, type ContractFormData, type Template } from "@/types";
+import { INITIAL_FORM_DATA, type ContractFormData, type RentPeriodFormData, type Template } from "@/types";
 import WizardProgress from "@/components/contract/WizardProgress";
 import StepTemplate from "@/components/contract/StepTemplate";
-import StepLandlord from "@/components/contract/StepLandlord";
-import StepTenant from "@/components/contract/StepTenant";
+import StepParty from "@/components/contract/StepParty";
 import StepPropertyTerms from "@/components/contract/StepPropertyTerms";
 import StepReview from "@/components/contract/StepReview";
 
@@ -51,6 +50,27 @@ export default function NewContractPage() {
   };
   const updateTerms = (field: keyof ContractFormData["terms"], value: string) => {
     setFormData((prev) => ({ ...prev, terms: { ...prev.terms, [field]: value } as ContractFormData["terms"] }));
+  };
+  const addRentPeriod = () => {
+    setFormData((prev) => ({
+      ...prev,
+      terms: { ...prev.terms, rentPeriods: [...prev.terms.rentPeriods, { fromDate: "", toDate: "", amount: "" }] },
+    }));
+  };
+  const removeRentPeriod = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      terms: { ...prev.terms, rentPeriods: prev.terms.rentPeriods.filter((_, i) => i !== index) },
+    }));
+  };
+  const updateRentPeriod = (index: number, field: keyof RentPeriodFormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      terms: {
+        ...prev.terms,
+        rentPeriods: prev.terms.rentPeriods.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
+      },
+    }));
   };
 
   function applyErrors(issues: { path: (string | number)[]; message: string }[]): boolean {
@@ -141,8 +161,24 @@ export default function NewContractPage() {
             onSelect={(id) => setFormData((prev) => ({ ...prev, templateId: id }))}
           />
         )}
-        {step === 1 && <StepLandlord value={formData.landlord} errors={errors} onChange={updateLandlord} />}
-        {step === 2 && <StepTenant value={formData.tenant} errors={errors} onChange={updateTenant} />}
+        {step === 1 && (
+          <StepParty
+            title="Thông tin bên cho thuê (Bên A)"
+            subtitle="Chủ nhà hoặc công ty đại diện cho thuê."
+            value={formData.landlord}
+            errors={errors}
+            onChange={updateLandlord}
+          />
+        )}
+        {step === 2 && (
+          <StepParty
+            title="Thông tin bên thuê (Bên B)"
+            subtitle="Người hoặc công ty sẽ thuê tài sản."
+            value={formData.tenant}
+            errors={errors}
+            onChange={updateTenant}
+          />
+        )}
         {step === 3 && (
           <StepPropertyTerms
             property={formData.property}
@@ -150,6 +186,9 @@ export default function NewContractPage() {
             errors={errors}
             onPropertyChange={updateProperty}
             onTermsChange={updateTerms}
+            onAddRentPeriod={addRentPeriod}
+            onRemoveRentPeriod={removeRentPeriod}
+            onRentPeriodChange={updateRentPeriod}
           />
         )}
         {step === 4 && (
