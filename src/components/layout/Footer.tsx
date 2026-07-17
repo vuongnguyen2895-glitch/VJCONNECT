@@ -9,7 +9,7 @@ const FOOTER_LINKS: Record<string, { href: string; label: string }[]> = {
     { href: "#pricing", label: "Bảng giá" },
   ],
   "Công ty": [
-    { href: "#", label: "Về chúng tôi" },
+    { href: "/about", label: "Về chúng tôi" },
     { href: "#", label: "Điều khoản dịch vụ" },
     { href: "#", label: "Chính sách bảo mật" },
   ],

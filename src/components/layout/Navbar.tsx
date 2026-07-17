@@ -24,6 +24,9 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
+          <Link href="/about" className="text-sm font-medium text-slate-600 transition-colors hover:text-brand-600">
+            Về chúng tôi
+          </Link>
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
@@ -61,6 +64,13 @@ export default function Navbar() {
       {open && (
         <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-1">
+            <Link
+              href="/about"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-3 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-brand-600"
+            >
+              Về chúng tôi
+            </Link>
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
