@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Logo from "@/components/brand/Logo";
@@ -15,6 +16,8 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
@@ -28,13 +31,13 @@ export default function Navbar() {
             Về chúng tôi
           </Link>
           {NAV_LINKS.map((link) => (
-            <a
+            <Link
               key={link.href}
-              href={link.href}
+              href={isHome ? link.href : `/${link.href}`}
               className="text-sm font-medium text-slate-600 transition-colors hover:text-brand-600"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -72,14 +75,14 @@ export default function Navbar() {
               Về chúng tôi
             </Link>
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.href}
-                href={link.href}
+                href={isHome ? link.href : `/${link.href}`}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-3 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-brand-600"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
           <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
