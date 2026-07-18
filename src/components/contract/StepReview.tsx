@@ -6,6 +6,7 @@ import type { ContractFormData, PartyFormData, Template } from "@/types";
 interface StepReviewProps {
   data: ContractFormData;
   template?: Template;
+  buildingName?: string;
   submitting: boolean;
   submitLabel?: string;
   onEditStep: (step: number) => void;
@@ -18,7 +19,7 @@ const COST_METHOD_LABELS: Record<string, string> = {
   fixed: "Khoán cố định",
 };
 
-export default function StepReview({ data, template, submitting, submitLabel = "Tạo hợp đồng", onEditStep, onSubmit }: StepReviewProps) {
+export default function StepReview({ data, template, buildingName, submitting, submitLabel = "Tạo hợp đồng", onEditStep, onSubmit }: StepReviewProps) {
   return (
     <div>
       <h2 className="text-lg font-bold text-slate-900">Xem lại & xác nhận</h2>
@@ -30,6 +31,12 @@ export default function StepReview({ data, template, submitting, submitLabel = "
             {template?.icon} {template?.name}
           </p>
           {data.contractNo && <p className="mt-1 font-mono text-xs text-slate-500">Số hợp đồng: {data.contractNo}</p>}
+          {buildingName && (
+            <p className="mt-1 text-xs text-slate-500">
+              Thuộc: <span className="font-medium text-slate-700">{buildingName}</span>
+              {data.roomName && ` — ${data.roomName}`}
+            </p>
+          )}
         </ReviewSection>
 
         <ReviewSection title="Bên cho thuê (Bên A)" onEdit={() => onEditStep(1)}>

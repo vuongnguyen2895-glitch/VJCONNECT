@@ -95,6 +95,8 @@ export interface ContractClause {
 export interface ContractFormData {
   templateId: string;
   contractNo: string;
+  buildingId: string;
+  roomName: string;
   landlord: PartyFormData;
   tenant: PartyFormData;
   clauses: ContractClause[];
@@ -207,6 +209,8 @@ const INITIAL_PARTY_DATA: PartyFormData = {
 export const INITIAL_FORM_DATA: ContractFormData = {
   templateId: "",
   contractNo: "",
+  buildingId: "",
+  roomName: "",
   landlord: { ...INITIAL_PARTY_DATA },
   tenant: { ...INITIAL_PARTY_DATA },
   clauses: DEFAULT_CLAUSES.map((c) => ({ ...c })),

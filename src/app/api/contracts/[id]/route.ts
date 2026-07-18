@@ -14,6 +14,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       where: { id: params.id },
       include: {
         template: true,
+        building: true,
         parties: true,
         files: { orderBy: { createdAt: "desc" } },
         activities: { orderBy: { createdAt: "desc" }, take: 20 },
@@ -71,6 +72,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: "Mẫu hợp đồng không hợp lệ" }, { status: 400 });
     }
 
+    if (data.buildingId) {
+      const building = await db.building.findUnique({ where: { id: data.buildingId } });
+      if (!building || building.ownerId !== user.id) {
+        return NextResponse.json({ error: "Nhà/căn hộ không hợp lệ" }, { status: 400 });
+      }
+    }
+
     let contractNo = contract.contractNo;
     if (data.contractNo && data.contractNo !== contract.contractNo) {
       const existing = await db.contract.findUnique({ where: { contractNo: data.contractNo } });
@@ -109,6 +117,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         contractNo,
         templateId: data.templateId,
         title: `HĐ thuê ${template.name} - ${data.property.address}`,
+        buildingId: data.buildingId || null,
+        roomName: data.roomName || null,
         dataJson: {
           landlord: data.landlord,
           tenant: data.tenant,

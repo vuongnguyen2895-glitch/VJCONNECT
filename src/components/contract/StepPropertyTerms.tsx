@@ -1,11 +1,19 @@
-import { Banknote, Calendar, CalendarClock, FileText, Landmark, MapPin, Plus, Ruler, Sofa, Target, Trash2, Wallet } from "lucide-react";
+import { Banknote, Building2, Calendar, CalendarClock, DoorOpen, FileText, Landmark, MapPin, Plus, Ruler, Sofa, Target, Trash2, Wallet } from "lucide-react";
 import FormField from "./FormField";
+import BuildingSelect, { type BuildingOption } from "./BuildingSelect";
 import type { ContractFormData, CostMethod, RentPeriodFormData } from "@/types";
 
 interface StepPropertyTermsProps {
+  buildingId: string;
+  roomName: string;
+  buildings: BuildingOption[];
+  buildingsLoading: boolean;
   property: ContractFormData["property"];
   terms: ContractFormData["terms"];
   errors: Partial<Record<string, string>>;
+  onBuildingIdChange: (value: string) => void;
+  onBuildingCreated: (building: BuildingOption) => void;
+  onRoomNameChange: (value: string) => void;
   onPropertyChange: (field: keyof ContractFormData["property"], value: string) => void;
   onTermsChange: (field: keyof ContractFormData["terms"], value: string) => void;
   onAddRentPeriod: () => void;
@@ -29,9 +37,16 @@ const COST_CATEGORIES: { field: CostField; label: string }[] = [
 ];
 
 export default function StepPropertyTerms({
+  buildingId,
+  roomName,
+  buildings,
+  buildingsLoading,
   property,
   terms,
   errors,
+  onBuildingIdChange,
+  onBuildingCreated,
+  onRoomNameChange,
   onPropertyChange,
   onTermsChange,
   onAddRentPeriod,
@@ -43,6 +58,32 @@ export default function StepPropertyTerms({
       <div>
         <h2 className="text-lg font-bold text-slate-900">Thông tin tài sản</h2>
         <p className="mt-1 text-sm text-slate-500">Địa chỉ và đặc điểm của nhà/căn hộ cho thuê.</p>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-700">Thuộc nhà/căn hộ (không bắt buộc)</p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            Liên kết hợp đồng này với một nhà/căn hộ để quản lý nhiều phòng và lập phiếu tính tiền hàng tháng.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Nhà/Căn hộ" icon={Building2} optional>
+              <BuildingSelect
+                value={buildingId}
+                onChange={onBuildingIdChange}
+                buildings={buildings}
+                loading={buildingsLoading}
+                onCreated={onBuildingCreated}
+              />
+            </FormField>
+            <FormField label="Tên/số phòng" icon={DoorOpen} optional>
+              <input
+                value={roomName}
+                onChange={(e) => onRoomNameChange(e.target.value)}
+                placeholder="Phòng 101, Tầng 2..."
+                className="input pl-10"
+              />
+            </FormField>
+          </div>
+        </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">

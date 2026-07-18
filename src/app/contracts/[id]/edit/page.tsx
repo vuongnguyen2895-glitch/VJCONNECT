@@ -31,6 +31,8 @@ export default function EditContractPage() {
         setInitialFormData({
           templateId: contract.template.id,
           contractNo: contract.contractNo ?? "",
+          buildingId: contract.buildingId ?? "",
+          roomName: contract.roomName ?? "",
           landlord: dataJson.landlord,
           tenant: dataJson.tenant,
           clauses: dataJson.clauses !== undefined ? dataJson.clauses : DEFAULT_CLAUSES.map((c) => ({ ...c })),

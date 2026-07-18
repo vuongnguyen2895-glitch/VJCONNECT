@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Pencil, Send, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Pencil, Receipt, Send, Trash2, Wallet } from "lucide-react";
 import type { ContractStatus, PartyKind, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,8 @@ interface ContractDetail {
   endDate: string | null;
   rentAmount: string | null;
   deposit: string | null;
+  roomName: string | null;
+  building: { id: string; name: string } | null;
   template: { name: string; icon: string | null };
   parties: ContractParty[];
   activities: { id: string; action: string; actorName: string | null; createdAt: string }[];
@@ -198,6 +200,12 @@ export default function ContractDetailPage() {
             <div>
               <h1 className="text-xl font-bold text-slate-900">{contract.title ?? contract.template.name}</h1>
               <p className="mt-0.5 font-mono text-sm text-slate-500">{contract.contractNo}</p>
+              {contract.building && (
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {contract.building.name}
+                  {contract.roomName && ` — ${contract.roomName}`}
+                </p>
+              )}
             </div>
           </div>
           <span
@@ -251,6 +259,11 @@ export default function ContractDetailPage() {
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-600">
               <CheckCircle2 size={16} /> Đã nhận cọc
             </span>
+          )}
+          {contract.status === "SIGNED" && (
+            <Link href={`/contracts/${contract.id}/invoices`} className="btn-secondary text-sm">
+              <Receipt size={16} /> Phiếu tính tiền
+            </Link>
           )}
         </div>
       </div>

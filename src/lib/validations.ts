@@ -143,6 +143,8 @@ export const createContractSchema = z.object({
       .regex(/^[A-Za-z0-9/_-]+$/, "Số hợp đồng chỉ gồm chữ, số, dấu / _ -")
       .optional(),
   ),
+  buildingId: z.preprocess((val) => (val === "" ? undefined : val), z.string().optional()),
+  roomName: z.string().optional(),
   landlord: landlordSchema,
   tenant: tenantSchema,
   clauses: z.array(clauseSchema).optional(),
@@ -150,6 +152,48 @@ export const createContractSchema = z.object({
   terms: termsSchema,
 });
 
+// ============================================================
+// BUILDINGS (Nhà / Căn hộ)
+// ============================================================
+
+export const buildingSchema = z.object({
+  name: z.string().min(2, "Vui lòng nhập tên nhà/căn hộ"),
+  address: z.string().optional(),
+  electricityPrice: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().regex(/^\d+$/, "Đơn giá điện không hợp lệ").optional(),
+  ),
+  waterPrice: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().regex(/^\d+$/, "Đơn giá nước không hợp lệ").optional(),
+  ),
+});
+
+// ============================================================
+// INVOICES (Phiếu tính tiền hàng tháng)
+// ============================================================
+
+export const createInvoiceSchema = z.object({
+  year: z.number().int().min(2020).max(2100),
+  month: z.number().int().min(1).max(12),
+  rentAmount: z.string().min(1, "Vui lòng nhập tiền thuê"),
+  electricityOldReading: z.string().optional(),
+  electricityNewReading: z.string().optional(),
+  electricityUnitPrice: z.string().optional(),
+  electricityAmount: z.string().min(1, "Vui lòng nhập tiền điện"),
+  waterOldReading: z.string().optional(),
+  waterNewReading: z.string().optional(),
+  waterUnitPrice: z.string().optional(),
+  waterAmount: z.string().min(1, "Vui lòng nhập tiền nước"),
+  internetAmount: z.string().min(1, "Vui lòng nhập tiền internet"),
+  serviceFeeAmount: z.string().min(1, "Vui lòng nhập phí dịch vụ"),
+  otherAmount: z.string().optional(),
+  otherNote: z.string().optional(),
+  note: z.string().optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateContractInput = z.infer<typeof createContractSchema>;
+export type BuildingInput = z.infer<typeof buildingSchema>;
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;

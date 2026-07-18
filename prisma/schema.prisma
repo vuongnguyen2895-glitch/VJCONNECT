@@ -35,6 +35,7 @@ model User {
   partyRecords  ContractParty[]
   notifications Notification[]
   sessions      Session[]
+  buildings     Building[]
 
   @@map("users")
 }
@@ -89,6 +90,28 @@ model Template {
 }
 
 // ============================================================
+// BUILDINGS (Nhà / Căn hộ — groups multiple room contracts)
+// ============================================================
+
+model Building {
+  id               String   @id @default(cuid())
+  ownerId          String   @map("owner_id")
+  name             String   // "Nhà số 12 Lê Lợi", "Chung cư ABC"
+  address          String?
+  electricityPrice Decimal? @map("electricity_price") @db.Decimal(12, 0) // đồng/kWh, dùng chung cho cả nhà
+  waterPrice       Decimal? @map("water_price") @db.Decimal(12, 0) // đồng/m³, dùng chung cho cả nhà
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  contracts Contract[]
+
+  @@index([ownerId])
+  @@map("buildings")
+}
+
+// ============================================================
 // CONTRACTS
 // ============================================================
 
@@ -102,6 +125,10 @@ model Contract {
 
   // Contract data (all form fields as JSON)
   dataJson    Json           @map("data_json")
+
+  // Groups this contract (room) under a Building (nhà/căn hộ), for billing management
+  buildingId  String?        @map("building_id")
+  roomName    String?        @map("room_name") // "Phòng 101", "Tầng 2"...
 
   // Important dates
   startDate   DateTime?      @map("start_date")
@@ -119,12 +146,15 @@ model Contract {
   // Relations
   template    Template       @relation(fields: [templateId], references: [id])
   owner       User           @relation("ContractOwner", fields: [ownerId], references: [id])
+  building    Building?      @relation(fields: [buildingId], references: [id])
   parties     ContractParty[]
   files       ContractFile[]
   activities  ContractActivity[]
+  invoices    Invoice[]
 
   @@index([ownerId, status])
   @@index([status, endDate])
+  @@index([buildingId])
   @@map("contracts")
 }
 
@@ -198,6 +228,51 @@ model ContractActivity {
 }
 
 // ============================================================
+// INVOICES (Phiếu tính tiền hàng tháng — theo từng hợp đồng/phòng)
+// ============================================================
+
+model Invoice {
+  id         String @id @default(cuid())
+  contractId String @map("contract_id")
+  year       Int
+  month      Int // 1-12
+
+  rentAmount Decimal @map("rent_amount") @db.Decimal(15, 0)
+
+  // Điện — theo chỉ số cũ/mới × đơn giá (nếu bên thuê tự trả theo chỉ số), hoặc số tiền khoán cố định
+  electricityOldReading Decimal? @map("electricity_old_reading") @db.Decimal(12, 2)
+  electricityNewReading Decimal? @map("electricity_new_reading") @db.Decimal(12, 2)
+  electricityUnitPrice  Decimal? @map("electricity_unit_price") @db.Decimal(12, 0)
+  electricityAmount     Decimal  @default(0) @map("electricity_amount") @db.Decimal(15, 0)
+
+  // Nước — tương tự điện
+  waterOldReading Decimal? @map("water_old_reading") @db.Decimal(12, 2)
+  waterNewReading Decimal? @map("water_new_reading") @db.Decimal(12, 2)
+  waterUnitPrice  Decimal? @map("water_unit_price") @db.Decimal(12, 0)
+  waterAmount     Decimal  @default(0) @map("water_amount") @db.Decimal(15, 0)
+
+  internetAmount   Decimal @default(0) @map("internet_amount") @db.Decimal(15, 0)
+  serviceFeeAmount Decimal @default(0) @map("service_fee_amount") @db.Decimal(15, 0)
+  otherAmount      Decimal @default(0) @map("other_amount") @db.Decimal(15, 0)
+  otherNote        String? @map("other_note")
+
+  totalAmount Decimal @map("total_amount") @db.Decimal(15, 0)
+
+  status InvoiceStatus @default(UNPAID)
+  paidAt DateTime?     @map("paid_at")
+  note   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, year, month])
+  @@index([contractId, year, month])
+  @@map("invoices")
+}
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 
@@ -264,4 +339,9 @@ enum FileType {
   DRAFT_PDF      // PDF bản nháp
   SIGNED_PDF     // PDF đã ký
   ATTACHMENT     // Tài liệu đính kèm
+}
+
+enum InvoiceStatus {
+  UNPAID // Chưa thanh toán
+  PAID   // Đã thanh toán
 }

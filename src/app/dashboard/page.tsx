@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { CheckCircle2, Clock, FileStack, FileText, Loader2, Plus, Search, Timer } from "lucide-react";
@@ -8,6 +8,7 @@ import type { ContractStatus, PartyRole } from "@prisma/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatVND, formatDateVN, getStatusDisplay } from "@/lib/contract-utils";
 import type { DashboardStats } from "@/types";
+import DashboardTabs from "@/components/dashboard/DashboardTabs";
 
 interface ContractListItem {
   id: string;
@@ -16,6 +17,8 @@ interface ContractListItem {
   title: string | null;
   rentAmount: string | null;
   updatedAt: string;
+  roomName: string | null;
+  building: { id: string; name: string } | null;
   template: { name: string; icon: string | null };
   parties: { name: string; role: PartyRole; signedAt: string | null }[];
 }
@@ -83,6 +86,20 @@ export default function DashboardPage() {
     return () => clearTimeout(handle);
   }, [tab, search]);
 
+  const groupedContracts = useMemo(() => {
+    const groups = new Map<string, { key: string; label: string; items: ContractListItem[] }>();
+    for (const contract of contracts) {
+      const key = contract.building?.id ?? "__unassigned__";
+      const label = contract.building?.name ?? "Chưa gán nhà";
+      if (!groups.has(key)) groups.set(key, { key, label, items: [] });
+      groups.get(key)!.items.push(contract);
+    }
+    const result = Array.from(groups.values());
+    // Push the "unassigned" bucket to the end so named buildings show first
+    result.sort((a, b) => (a.key === "__unassigned__" ? 1 : b.key === "__unassigned__" ? -1 : 0));
+    return result;
+  }, [contracts]);
+
   const statCards = [
     { label: "Tổng số hợp đồng", value: stats?.total, icon: FileStack, color: "bg-brand-50 text-brand-600" },
     { label: "Đã ký", value: stats?.signed, icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
@@ -97,6 +114,8 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-slate-900">Chào {user?.name ?? "bạn"} 👋</h1>
         <p className="mt-1 text-sm text-slate-500">Đây là tổng quan hợp đồng của bạn.</p>
       </div>
+
+      <DashboardTabs />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {statCards.map((card) => (
@@ -140,7 +159,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div>
             {listLoading ? (
               <div className="flex items-center justify-center py-16 text-slate-400">
                 <Loader2 size={24} className="animate-spin" />
@@ -156,40 +175,49 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              contracts.map((contract) => {
-                const status = getStatusDisplay(contract.status);
-                return (
-                  <Link
-                    key={contract.id}
-                    href={`/contracts/${contract.id}`}
-                    className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50"
-                  >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-xl">
-                      {contract.template.icon ?? "📄"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {contract.title ?? contract.template.name}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {contract.contractNo} · {contract.parties.map((p) => p.name).join(" — ")}
-                      </p>
-                    </div>
-                    <div className="hidden shrink-0 text-right sm:block">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {contract.rentAmount ? formatVND(contract.rentAmount) : "—"}
-                      </p>
-                      <p className="text-xs text-slate-400">{formatDateVN(contract.updatedAt)}</p>
-                    </div>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
-                      style={{ color: status.color, backgroundColor: status.bg }}
-                    >
-                      {status.label}
-                    </span>
-                  </Link>
-                );
-              })
+              groupedContracts.map((group) => (
+                <div key={group.key}>
+                  <p className="border-b border-slate-100 bg-slate-50/70 px-5 py-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                    {group.label} <span className="font-normal normal-case text-slate-400">· {group.items.length} phòng</span>
+                  </p>
+                  <div className="divide-y divide-slate-100">
+                    {group.items.map((contract) => {
+                      const status = getStatusDisplay(contract.status);
+                      return (
+                        <Link
+                          key={contract.id}
+                          href={`/contracts/${contract.id}`}
+                          className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50"
+                        >
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-xl">
+                            {contract.template.icon ?? "📄"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                              {contract.roomName || contract.title || contract.template.name}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
+                              {contract.contractNo} · {contract.parties.map((p) => p.name).join(" — ")}
+                            </p>
+                          </div>
+                          <div className="hidden shrink-0 text-right sm:block">
+                            <p className="text-sm font-semibold text-slate-900">
+                              {contract.rentAmount ? formatVND(contract.rentAmount) : "—"}
+                            </p>
+                            <p className="text-xs text-slate-400">{formatDateVN(contract.updatedAt)}</p>
+                          </div>
+                          <span
+                            className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+                            style={{ color: status.color, backgroundColor: status.bg }}
+                          >
+                            {status.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>

@@ -13,6 +13,7 @@ import StepParty from "@/components/contract/StepParty";
 import StepPropertyTerms from "@/components/contract/StepPropertyTerms";
 import StepClauses from "@/components/contract/StepClauses";
 import StepReview from "@/components/contract/StepReview";
+import type { BuildingOption } from "@/components/contract/BuildingSelect";
 
 const STEP_LABELS = ["Chọn mẫu", "Bên cho thuê", "Bên thuê", "Tài sản & điều khoản", "Điều khoản", "Xem lại"];
 const DRAFT_STORAGE_KEY = "vjconnect_contract_draft";
@@ -28,6 +29,8 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
   const [step, setStep] = useState(0);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [buildings, setBuildings] = useState<BuildingOption[]>([]);
+  const [buildingsLoading, setBuildingsLoading] = useState(true);
   const [formData, setFormData] = useState<ContractFormData>(mode === "edit" ? initialFormData : INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +42,14 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
       .then((data) => setTemplates(data.templates))
       .catch(() => toast.error("Không thể tải danh sách mẫu hợp đồng"))
       .finally(() => setTemplatesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/buildings")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => setBuildings(data.buildings))
+      .catch(() => toast.error("Không thể tải danh sách nhà/căn hộ"))
+      .finally(() => setBuildingsLoading(false));
   }, []);
 
   // Restore an auto-saved draft, if any, once on mount (create mode only — edit mode already
@@ -76,9 +87,23 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
     () => templates.find((t) => t.id === formData.templateId),
     [templates, formData.templateId],
   );
+  const selectedBuilding = useMemo(
+    () => buildings.find((b) => b.id === formData.buildingId),
+    [buildings, formData.buildingId],
+  );
 
   const updateContractNo = (value: string) => {
     setFormData((prev) => ({ ...prev, contractNo: value }));
+  };
+  const updateBuildingId = (value: string) => {
+    setFormData((prev) => ({ ...prev, buildingId: value }));
+  };
+  const updateRoomName = (value: string) => {
+    setFormData((prev) => ({ ...prev, roomName: value }));
+  };
+  const handleBuildingCreated = (building: BuildingOption) => {
+    setBuildings((prev) => [building, ...prev]);
+    updateBuildingId(building.id);
   };
   const updateLandlord = (field: keyof ContractFormData["landlord"], value: string) => {
     setFormData((prev) => ({ ...prev, landlord: { ...prev.landlord, [field]: value } }));
@@ -268,9 +293,16 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
         )}
         {step === 3 && (
           <StepPropertyTerms
+            buildingId={formData.buildingId}
+            roomName={formData.roomName}
+            buildings={buildings}
+            buildingsLoading={buildingsLoading}
             property={formData.property}
             terms={formData.terms}
             errors={errors}
+            onBuildingIdChange={updateBuildingId}
+            onBuildingCreated={handleBuildingCreated}
+            onRoomNameChange={updateRoomName}
             onPropertyChange={updateProperty}
             onTermsChange={updateTerms}
             onAddRentPeriod={addRentPeriod}
@@ -292,6 +324,7 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
           <StepReview
             data={formData}
             template={selectedTemplate}
+            buildingName={selectedBuilding?.name}
             submitting={submitting}
             submitLabel={mode === "create" ? "Tạo hợp đồng" : "Lưu thay đổi"}
             onEditStep={setStep}

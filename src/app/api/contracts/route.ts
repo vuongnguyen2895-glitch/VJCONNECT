@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         where,
         include: {
           template: { select: { name: true, icon: true, category: true } },
+          building: { select: { id: true, name: true } },
           parties: { select: { name: true, role: true, signedAt: true } },
           _count: { select: { files: true } },
         },
@@ -82,6 +83,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Mẫu hợp đồng không hợp lệ" }, { status: 400 });
     }
 
+    // Verify the building (if any) belongs to this user
+    if (data.buildingId) {
+      const building = await db.building.findUnique({ where: { id: data.buildingId } });
+      if (!building || building.ownerId !== user.id) {
+        return NextResponse.json({ error: "Nhà/căn hộ không hợp lệ" }, { status: 400 });
+      }
+    }
+
     // Use custom contract number if provided, checking uniqueness; otherwise auto-generate
     let contractNo: string;
     if (data.contractNo) {
@@ -108,6 +117,8 @@ export async function POST(req: Request) {
         ownerId: user.id,
         status: ContractStatus.DRAFT,
         title: `HĐ thuê ${template.name} - ${data.property.address}`,
+        buildingId: data.buildingId || null,
+        roomName: data.roomName || null,
         dataJson: {
           landlord: data.landlord,
           tenant: data.tenant,
