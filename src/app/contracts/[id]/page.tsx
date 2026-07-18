@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Send, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Pencil, Send, Trash2, Wallet } from "lucide-react";
 import type { ContractStatus, PartyKind, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -226,6 +226,9 @@ export default function ContractDetailPage() {
           </a>
           {contract.status === "DRAFT" && (
             <>
+              <Link href={`/contracts/${contract.id}/edit`} className="btn-secondary text-sm">
+                <Pencil size={16} /> Chỉnh sửa
+              </Link>
               <button type="button" onClick={handleSendForSigning} disabled={sending} className="btn-secondary text-sm">
                 {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Gửi yêu cầu ký
               </button>

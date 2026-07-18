@@ -7,6 +7,7 @@ interface StepReviewProps {
   data: ContractFormData;
   template?: Template;
   submitting: boolean;
+  submitLabel?: string;
   onEditStep: (step: number) => void;
   onSubmit: () => void;
 }
@@ -17,7 +18,7 @@ const COST_METHOD_LABELS: Record<string, string> = {
   fixed: "Khoán cố định",
 };
 
-export default function StepReview({ data, template, submitting, onEditStep, onSubmit }: StepReviewProps) {
+export default function StepReview({ data, template, submitting, submitLabel = "Tạo hợp đồng", onEditStep, onSubmit }: StepReviewProps) {
   return (
     <div>
       <h2 className="text-lg font-bold text-slate-900">Xem lại & xác nhận</h2>
@@ -100,7 +101,7 @@ export default function StepReview({ data, template, submitting, onEditStep, onS
           <Loader2 size={18} className="animate-spin" />
         ) : (
           <>
-            <CheckCircle2 size={18} /> Tạo hợp đồng
+            <CheckCircle2 size={18} /> {submitLabel}
           </>
         )}
       </button>
