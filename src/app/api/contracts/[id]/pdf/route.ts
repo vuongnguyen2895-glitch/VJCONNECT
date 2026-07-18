@@ -238,7 +238,6 @@ ${clauseContentHtml(clause.content)}`,
     .signature-box { text-align: center; width: 45%; }
     .signature-box p { margin: 4px 0; }
     .signature-space { height: 80px; }
-    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 60px; color: rgba(129, 71, 117, 0.08); pointer-events: none; z-index: -1; white-space: nowrap; }
     table { width: 100%; border-collapse: collapse; margin: 8px 0; }
     td { padding: 4px 8px; vertical-align: top; }
     td:first-child { width: 220px; font-weight: bold; }
@@ -246,7 +245,6 @@ ${clauseContentHtml(clause.content)}`,
 </head>
 <body>
   <button class="no-print" onclick="window.print()">🖨️ In / Xuất PDF</button>
-  <div class="watermark">VJConnect.com</div>
 
   <div class="header">
     <p><strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong></p>
