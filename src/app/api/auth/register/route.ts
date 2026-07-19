@@ -17,14 +17,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create user
+    // Create user — new signups get a free 1-year Pro trial
     const passwordHash = await hashPassword(data.password);
+    const trialExpiresAt = new Date();
+    trialExpiresAt.setFullYear(trialExpiresAt.getFullYear() + 1);
+
     const user = await db.user.create({
       data: {
         name: data.name,
         email: data.email,
         phone: data.phone || null,
         passwordHash,
+        plan: "PRO",
+        planExpiresAt: trialExpiresAt,
       },
     });
 

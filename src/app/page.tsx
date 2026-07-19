@@ -116,12 +116,17 @@ const FEATURES = [
 
 const PLANS = [
   {
-    name: "Miễn phí",
+    name: "Miễn phí 1 năm",
     price: "0₫",
-    period: "mãi mãi",
-    description: "Dùng thử để trải nghiệm quy trình tạo hợp đồng điện tử.",
-    features: ["1 hợp đồng / tháng", "Mẫu cơ bản (nhà, căn hộ, phòng trọ)", "Xuất PDF không giới hạn", "Lưu trữ 3 tháng"],
-    cta: "Bắt đầu miễn phí",
+    period: "trong 12 tháng đầu",
+    description: "Khách hàng mới được trải nghiệm đầy đủ tính năng Pro, miễn phí trong năm đầu tiên.",
+    features: [
+      "Hợp đồng không giới hạn",
+      "Toàn bộ mẫu, kể cả mẫu cao cấp",
+      "Xuất PDF không giới hạn",
+      "Lưu trữ không giới hạn",
+    ],
+    cta: "Bắt đầu dùng thử miễn phí",
     highlighted: false,
   },
   {

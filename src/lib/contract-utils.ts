@@ -30,11 +30,12 @@ export async function canCreateContract(userId: string): Promise<{ allowed: bool
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return { allowed: false, reason: "Người dùng không tồn tại" };
 
-  if (user.plan === Plan.PRO || user.plan === Plan.ENTERPRISE) {
+  const planActive = !user.planExpiresAt || user.planExpiresAt > new Date();
+  if ((user.plan === Plan.PRO || user.plan === Plan.ENTERPRISE) && planActive) {
     return { allowed: true };
   }
 
-  // FREE plan: max 1 contract per month
+  // FREE plan (or an expired PRO/ENTERPRISE trial): max 1 contract per month
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
@@ -47,10 +48,10 @@ export async function canCreateContract(userId: string): Promise<{ allowed: bool
   });
 
   if (contractsThisMonth >= 1) {
-    return {
-      allowed: false,
-      reason: "Gói miễn phí chỉ cho phép tạo 1 hợp đồng/tháng. Nâng cấp gói Pro để tạo không giới hạn.",
-    };
+    const reason = !planActive
+      ? "Gói dùng thử miễn phí đã hết hạn, chỉ còn cho phép tạo 1 hợp đồng/tháng. Nâng cấp gói Pro để tạo không giới hạn."
+      : "Gói miễn phí chỉ cho phép tạo 1 hợp đồng/tháng. Nâng cấp gói Pro để tạo không giới hạn.";
+    return { allowed: false, reason };
   }
 
   return { allowed: true };
