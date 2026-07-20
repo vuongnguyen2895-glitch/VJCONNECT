@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Loader2, Save, KeyRound } from "lucide-react";
+import { Loader2, Save, KeyRound, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDateVN } from "@/lib/contract-utils";
 
 interface AccountProfile {
   name: string;
@@ -13,9 +14,21 @@ interface AccountProfile {
   cccd: string;
 }
 
+interface PlanInfo {
+  plan: "FREE" | "PRO" | "ENTERPRISE";
+  planExpiresAt: string | null;
+}
+
+const PLAN_LABELS: Record<PlanInfo["plan"], string> = {
+  FREE: "Miễn phí",
+  PRO: "Pro",
+  ENTERPRISE: "Doanh nghiệp",
+};
+
 export default function SettingsPage() {
   useAuth();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -27,15 +40,16 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/account")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) =>
+      .then((data) => {
         setProfile({
           name: data.user.name ?? "",
           email: data.user.email ?? "",
           phone: data.user.phone ?? "",
           address: data.user.address ?? "",
           cccd: data.user.cccd ?? "",
-        }),
-      )
+        });
+        setPlanInfo({ plan: data.user.plan, planExpiresAt: data.user.planExpiresAt });
+      })
       .catch(() => toast.error("Không thể tải thông tin tài khoản"))
       .finally(() => setLoading(false));
   }, []);
@@ -112,6 +126,26 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-slate-900">Tài khoản</h1>
         <p className="mt-1 text-sm text-slate-500">Quản lý thông tin cá nhân và mật khẩu đăng nhập.</p>
       </div>
+
+      {planInfo && (
+        <div className="card flex items-center justify-between gap-4 p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+              <Sparkles size={20} />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Gói {PLAN_LABELS[planInfo.plan]}</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {planInfo.plan === "FREE"
+                  ? "Tối đa 1 hợp đồng/tháng."
+                  : planInfo.planExpiresAt
+                    ? `Miễn phí đến hết ngày ${formatDateVN(planInfo.planExpiresAt)}`
+                    : "Hợp đồng không giới hạn."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card p-6 sm:p-8">
         <h2 className="text-lg font-bold text-slate-900">Thông tin cá nhân</h2>
