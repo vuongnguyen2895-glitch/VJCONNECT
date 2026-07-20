@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Loader2 } from "lucide-react";
 import type { ContractStatus, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import SignaturePad from "@/components/contract/SignaturePad";
@@ -103,6 +103,14 @@ export default function SignPage() {
         <p className="text-sm text-slate-500">
           Cảm ơn {data.party.name}. Hợp đồng {contract.contractNo} đã ghi nhận chữ ký của bạn với vai trò {roleLabel.toLowerCase()}.
         </p>
+        <a
+          href={`/api/sign/${params.token}/pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-outline mt-2 text-sm"
+        >
+          <FileText size={16} /> Xem lại nội dung hợp đồng
+        </a>
       </div>
     );
   }
@@ -131,6 +139,15 @@ export default function SignPage() {
         <p className="mt-4 text-sm text-slate-500">
           Bạn đang ký với vai trò <span className="font-semibold text-slate-700">{roleLabel}</span>: {data.party.name}
         </p>
+
+        <a
+          href={`/api/sign/${params.token}/pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-outline mt-4 w-full justify-center text-sm sm:w-auto"
+        >
+          <FileText size={16} /> Xem toàn bộ nội dung hợp đồng
+        </a>
 
         <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 sm:grid-cols-4">
           <div>

@@ -4,11 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Pencil, Receipt, Send, Trash2, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Copy, ExternalLink, Loader2, Mail, MessageSquare, Pencil, Receipt, Send, Trash2, Wallet } from "lucide-react";
 import type { ContractStatus, PartyKind, PartyRole } from "@prisma/client";
 import { formatDateVN, formatVND, getStatusDisplay } from "@/lib/contract-utils";
 import { useAuth } from "@/hooks/useAuth";
 import { DEFAULT_CLAUSES } from "@/types";
+
+function ZaloIcon({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M7.5 8.5h9l-9 7h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 interface ContractParty {
   id: string;
@@ -147,12 +156,48 @@ export default function ContractDetailPage() {
     }
   }
 
+  function signingUrlFor(token: string) {
+    return `${window.location.origin}/sign/${token}`;
+  }
+
+  function signingMessageFor(party: ContractParty) {
+    const url = signingUrlFor(party.signingUrl!);
+    return `Xin chào ${party.name}, đây là liên kết xem và ký hợp đồng ${contract?.contractNo ?? ""} trên VJConnect: ${url}`;
+  }
+
   function copySigningLink(token: string) {
-    const url = `${window.location.origin}/sign/${token}`;
     navigator.clipboard
-      .writeText(url)
+      .writeText(signingUrlFor(token))
       .then(() => toast.success("Đã sao chép liên kết ký"))
       .catch(() => toast.error("Không thể sao chép liên kết"));
+  }
+
+  function sendViaZalo(party: ContractParty) {
+    if (!party.phone) {
+      toast.error("Người này chưa có số điện thoại để gửi qua Zalo");
+      return;
+    }
+    navigator.clipboard.writeText(signingMessageFor(party)).catch(() => {});
+    toast.success("Đã sao chép nội dung — dán vào cửa sổ Zalo vừa mở");
+    window.open(`https://zalo.me/${party.phone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer");
+  }
+
+  function sendViaSms(party: ContractParty) {
+    if (!party.phone) {
+      toast.error("Người này chưa có số điện thoại để gửi SMS");
+      return;
+    }
+    window.open(`sms:${party.phone}?body=${encodeURIComponent(signingMessageFor(party))}`, "_self");
+  }
+
+  function sendViaEmail(party: ContractParty) {
+    if (!party.email) {
+      toast.error("Người này chưa có email để gửi");
+      return;
+    }
+    const subject = encodeURIComponent(`Liên kết ký hợp đồng ${contract?.contractNo ?? ""} — VJConnect`);
+    const body = encodeURIComponent(signingMessageFor(party));
+    window.open(`mailto:${party.email}?subject=${subject}&body=${body}`, "_self");
   }
 
   if (loading) {
@@ -291,13 +336,43 @@ export default function ContractDetailPage() {
                   </span>
                 ) : (
                   party.signingUrl && (
-                    <button
-                      type="button"
-                      onClick={() => copySigningLink(party.signingUrl!)}
-                      className="btn-secondary shrink-0 text-xs"
-                    >
-                      <Copy size={13} /> Sao chép
-                    </button>
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => sendViaZalo(party)}
+                        disabled={!party.phone}
+                        title={party.phone ? "Gửi qua Zalo" : "Chưa có SĐT"}
+                        className="btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ZaloIcon /> Zalo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendViaSms(party)}
+                        disabled={!party.phone}
+                        title={party.phone ? "Gửi qua SMS" : "Chưa có SĐT"}
+                        className="btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <MessageSquare size={13} /> SMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendViaEmail(party)}
+                        disabled={!party.email}
+                        title={party.email ? "Gửi qua email" : "Chưa có email"}
+                        className="btn-secondary text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Mail size={13} /> Email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copySigningLink(party.signingUrl!)}
+                        title="Sao chép liên kết"
+                        className="btn-secondary text-xs"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    </div>
                   )
                 )}
               </div>
