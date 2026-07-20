@@ -83,9 +83,14 @@ function LoginForm() {
         </div>
 
         <div>
-          <label className="label" htmlFor="password">
-            Mật khẩu
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="label" htmlFor="password">
+              Mật khẩu
+            </label>
+            <Link href="/forgot-password" className="text-xs font-semibold text-brand-600 hover:text-brand-700">
+              Quên mật khẩu?
+            </Link>
+          </div>
           <div className="relative">
             <Lock size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input

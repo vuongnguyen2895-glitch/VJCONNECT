@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Lock,
   PenLine,
+  Receipt,
   ShieldCheck,
   User,
   X,
@@ -106,6 +107,11 @@ const FEATURES = [
     icon: Bell,
     title: "Nhắc hạn hợp đồng",
     description: "Nhận thông báo trước khi hợp đồng hết hạn để gia hạn kịp thời.",
+  },
+  {
+    icon: Receipt,
+    title: "Lập phiếu báo tiền nhà hàng tháng",
+    description: "Tự động tính tiền điện, nước theo chỉ số và theo dõi trạng thái đã/chưa thanh toán từng phòng.",
   },
   {
     icon: LayoutDashboard,

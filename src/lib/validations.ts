@@ -21,6 +21,31 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
+  email: z.string().email("Email không hợp lệ"),
+  phone: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().regex(PHONE_REGEX, "Số điện thoại không hợp lệ").optional(),
+  ),
+  address: z.preprocess((val) => (val === "" ? undefined : val), z.string().optional()),
+  cccd: z.preprocess((val) => (val === "" ? undefined : val), z.string().optional()),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
+  newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Email không hợp lệ"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Thiếu mã xác nhận"),
+  newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự"),
+});
+
 // ============================================================
 // CONTRACT — PARTIES (individual or company)
 // ============================================================

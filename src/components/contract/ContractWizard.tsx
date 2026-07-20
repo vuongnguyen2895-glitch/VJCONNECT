@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { clauseSchema, createContractSchema, landlordSchema, propertySchema, tenantSchema, termsSchema } from "@/lib/validations";
-import { INITIAL_FORM_DATA, type ContractFormData, type RentPeriodFormData, type Template } from "@/types";
+import { INITIAL_FORM_DATA, type ContractFormData, type PartyFormData, type RentPeriodFormData, type Template } from "@/types";
 import WizardProgress from "@/components/contract/WizardProgress";
 import StepTemplate from "@/components/contract/StepTemplate";
 import StepParty from "@/components/contract/StepParty";
@@ -31,10 +31,12 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [buildings, setBuildings] = useState<BuildingOption[]>([]);
   const [buildingsLoading, setBuildingsLoading] = useState(true);
+  const [savedTenants, setSavedTenants] = useState<PartyFormData[]>([]);
   const [formData, setFormData] = useState<ContractFormData>(mode === "edit" ? initialFormData : INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [hadDraft, setHadDraft] = useState(false);
 
   useEffect(() => {
     fetch("/api/templates")
@@ -52,6 +54,37 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
       .finally(() => setBuildingsLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (mode !== "create") return;
+    fetch("/api/tenants/saved")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) =>
+        setSavedTenants(
+          data.tenants.map((t: any) => ({
+            partyKind: t.partyKind,
+            name: t.name ?? "",
+            phone: t.phone ?? "",
+            email: t.email ?? "",
+            address: t.address ?? "",
+            cccd: t.cccd ?? "",
+            dob: t.dob ?? "",
+            idIssueDate: t.idIssueDate ? t.idIssueDate.slice(0, 10) : "",
+            idIssuePlace: t.idIssuePlace ?? "",
+            businessRegNo: t.businessRegNo ?? "",
+            representativeName: t.representativeName ?? "",
+            representativePosition: t.representativePosition ?? "",
+          })),
+        ),
+      )
+      .catch(() => {
+        // Non-critical — quick-pick is just a convenience
+      });
+  }, [mode]);
+
+  const pickSavedTenant = (party: PartyFormData) => {
+    setFormData((prev) => ({ ...prev, tenant: party }));
+  };
+
   // Restore an auto-saved draft, if any, once on mount (create mode only — edit mode already
   // has real, persisted data loaded from the server)
   useEffect(() => {
@@ -67,6 +100,7 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
         // so StepClauses doesn't crash on `clauses.length` of undefined.
         setFormData({ ...INITIAL_FORM_DATA, ...saved.formData, clauses: saved.formData.clauses ?? INITIAL_FORM_DATA.clauses });
         setStep(saved.step);
+        setHadDraft(true);
         toast.success("Đã khôi phục bản nháp đang nhập dở");
       }
     } catch {
@@ -82,6 +116,33 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
     if (mode !== "create" || !draftRestored) return;
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ formData, step }));
   }, [formData, step, draftRestored, mode]);
+
+  // Pre-fill "Bên cho thuê" from the user's own saved profile (Tài khoản), so they don't
+  // have to retype their own info on every new contract — skipped if a draft was restored,
+  // since that already has whatever landlord data the user was mid-entering.
+  useEffect(() => {
+    if (mode !== "create" || !draftRestored || hadDraft) return;
+    if (formData.landlord.name.trim()) return;
+    fetch("/api/account")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        const profile = data.user;
+        setFormData((prev) => ({
+          ...prev,
+          landlord: {
+            ...prev.landlord,
+            name: profile.name ?? "",
+            phone: profile.phone ?? "",
+            address: profile.address ?? "",
+            cccd: profile.cccd ?? "",
+          },
+        }));
+      })
+      .catch(() => {
+        // Non-critical — user can still fill the fields in manually
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, draftRestored, hadDraft]);
 
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === formData.templateId),
@@ -289,6 +350,8 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
             value={formData.tenant}
             errors={errors}
             onChange={updateTenant}
+            savedOptions={savedTenants}
+            onPickSaved={pickSavedTenant}
           />
         )}
         {step === 3 && (

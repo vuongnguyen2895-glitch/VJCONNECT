@@ -11,7 +11,8 @@ const FAQ_ITEMS = [
   },
   {
     question: "Tôi có thể dùng thử miễn phí không?",
-    answer: "Có. Gói Miễn phí cho phép tạo 1 hợp đồng mỗi tháng, không cần thẻ tín dụng và không giới hạn thời gian dùng thử.",
+    answer:
+      "Có, và đang có ưu đãi đặc biệt: mọi tài khoản đăng ký mới được sử dụng miễn phí toàn bộ tính năng Pro (hợp đồng không giới hạn, mẫu cao cấp, lưu trữ không giới hạn) trong vòng 1 năm đầu tiên, không cần thẻ tín dụng.",
   },
   {
     question: "VJConnect hỗ trợ những loại hợp đồng nào?",

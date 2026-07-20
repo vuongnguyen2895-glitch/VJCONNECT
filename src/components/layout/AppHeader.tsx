@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import Logo from "@/components/brand/Logo";
 
@@ -26,13 +26,24 @@ export default function AppHeader() {
           )}
 
           {user && (
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-700"
+            <Link
+              href="/dashboard/settings"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-700 hover:bg-brand-100"
               title={user.name}
+              aria-label="Tài khoản"
             >
               {user.name.charAt(0).toUpperCase()}
-            </span>
+            </Link>
           )}
+
+          <Link
+            href="/dashboard/settings"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+            aria-label="Tài khoản"
+            title="Tài khoản"
+          >
+            <Settings size={19} />
+          </Link>
 
           <button
             type="button"

@@ -8,15 +8,38 @@ interface StepPartyProps {
   value: PartyFormData;
   errors: Partial<Record<keyof PartyFormData, string>>;
   onChange: (field: keyof PartyFormData, value: string) => void;
+  savedOptions?: PartyFormData[];
+  onPickSaved?: (party: PartyFormData) => void;
 }
 
-export default function StepParty({ title, subtitle, value, errors, onChange }: StepPartyProps) {
+export default function StepParty({ title, subtitle, value, errors, onChange, savedOptions, onPickSaved }: StepPartyProps) {
   const isCompany = value.partyKind === "COMPANY";
 
   return (
     <div>
       <h2 className="text-lg font-bold text-slate-900">{title}</h2>
       <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+
+      {savedOptions && savedOptions.length > 0 && onPickSaved && (
+        <div className="mt-4">
+          <label className="label">Chọn nhanh từ khách đã lưu</label>
+          <select
+            className="input"
+            value=""
+            onChange={(e) => {
+              const picked = savedOptions[Number(e.target.value)];
+              if (picked) onPickSaved(picked);
+            }}
+          >
+            <option value="">-- Nhập mới --</option>
+            {savedOptions.map((option, index) => (
+              <option key={`${option.cccd || option.name}-${index}`} value={index}>
+                {option.name} {option.phone ? `— ${option.phone}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mt-5 flex gap-2">
         <button

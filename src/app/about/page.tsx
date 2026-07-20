@@ -7,6 +7,7 @@ import {
   Lock,
   Mail,
   PenLine,
+  Phone,
   ShieldCheck,
   Target,
   Zap,
@@ -111,8 +112,11 @@ export default function AboutPage() {
               <Link href="/register" className="btn-primary text-base">
                 Tạo hợp đồng miễn phí <ArrowRight size={18} />
               </Link>
-              <a href="mailto:support@vjconnect.com" className="btn-outline text-base">
+              <a href="mailto:info@hopdongthue.com" className="btn-outline text-base">
                 <Mail size={18} /> Liên hệ hợp tác
+              </a>
+              <a href="tel:0367315165" className="btn-outline text-base">
+                <Phone size={18} /> 036.731.5165
               </a>
             </div>
           </div>
@@ -238,10 +242,16 @@ export default function AboutPage() {
                   Bắt đầu miễn phí <ArrowRight size={18} />
                 </Link>
                 <a
-                  href="mailto:support@vjconnect.com"
+                  href="mailto:info@hopdongthue.com"
                   className="btn justify-center border-2 border-white/70 px-7 py-3 text-base text-white hover:bg-white/10"
                 >
                   <Mail size={18} /> Liên hệ hợp tác
+                </a>
+                <a
+                  href="tel:0367315165"
+                  className="btn justify-center border-2 border-white/70 px-7 py-3 text-base text-white hover:bg-white/10"
+                >
+                  <Phone size={18} /> 036.731.5165
                 </a>
               </div>
             </div>
