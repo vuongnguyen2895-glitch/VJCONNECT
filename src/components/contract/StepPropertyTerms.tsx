@@ -6,6 +6,7 @@ import type { ContractFormData, CostMethod, RentPeriodFormData } from "@/types";
 interface StepPropertyTermsProps {
   buildingId: string;
   roomName: string;
+  roomOptions: string[];
   buildings: BuildingOption[];
   buildingsLoading: boolean;
   property: ContractFormData["property"];
@@ -39,6 +40,7 @@ const COST_CATEGORIES: { field: CostField; label: string }[] = [
 export default function StepPropertyTerms({
   buildingId,
   roomName,
+  roomOptions,
   buildings,
   buildingsLoading,
   property,
@@ -79,8 +81,17 @@ export default function StepPropertyTerms({
                 value={roomName}
                 onChange={(e) => onRoomNameChange(e.target.value)}
                 placeholder="Phòng 101, Tầng 2..."
+                list="room-name-options"
+                autoComplete="off"
                 className="input pl-10"
               />
+              {roomOptions.length > 0 && (
+                <datalist id="room-name-options">
+                  {roomOptions.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+              )}
             </FormField>
           </div>
         </div>

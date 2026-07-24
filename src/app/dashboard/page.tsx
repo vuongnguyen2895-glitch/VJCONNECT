@@ -46,6 +46,8 @@ const ACTIVITY_LABELS: Record<string, string> = {
   signed_by_landlord: "(bên A) đã ký hợp đồng",
   signed_by_tenant: "(bên B) đã ký hợp đồng",
   deposit_received: "đã xác nhận nhận cọc",
+  marked_moved_out: "đã đánh dấu khách không còn ở",
+  marked_still_renting: "đã đánh dấu khách còn ở",
 };
 
 export default function DashboardPage() {

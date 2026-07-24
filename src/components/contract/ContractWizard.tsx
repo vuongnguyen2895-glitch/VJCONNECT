@@ -32,6 +32,7 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
   const [buildings, setBuildings] = useState<BuildingOption[]>([]);
   const [buildingsLoading, setBuildingsLoading] = useState(true);
   const [savedTenants, setSavedTenants] = useState<PartyFormData[]>([]);
+  const [roomOptions, setRoomOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState<ContractFormData>(mode === "edit" ? initialFormData : INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +54,22 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
       .catch(() => toast.error("Không thể tải danh sách nhà/căn hộ"))
       .finally(() => setBuildingsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!formData.buildingId) {
+      setRoomOptions([]);
+      return;
+    }
+    fetch(`/api/buildings/${formData.buildingId}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        const names: string[] = data.building.contracts
+          .map((c: { roomName: string | null }) => c.roomName)
+          .filter((name: string | null): name is string => Boolean(name && name.trim()));
+        setRoomOptions(Array.from(new Set(names)));
+      })
+      .catch(() => setRoomOptions([]));
+  }, [formData.buildingId]);
 
   useEffect(() => {
     if (mode !== "create") return;
@@ -358,6 +375,7 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
           <StepPropertyTerms
             buildingId={formData.buildingId}
             roomName={formData.roomName}
+            roomOptions={roomOptions}
             buildings={buildings}
             buildingsLoading={buildingsLoading}
             property={formData.property}
