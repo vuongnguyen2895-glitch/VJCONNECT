@@ -6,8 +6,8 @@ import { Building2 } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Hợp đồng" },
-  { href: "/dashboard/tenants", label: "Khách thuê & hoá đơn" },
   { href: "/dashboard/tenant-directory", label: "Danh sách khách thuê" },
+  { href: "/dashboard/tenants", label: "Khách thuê & hoá đơn" },
 ];
 
 export default function DashboardTabs() {
