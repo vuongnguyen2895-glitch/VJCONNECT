@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Loader2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +35,7 @@ function formatDob(dob: string | null): string {
 
 export default function TenantDirectoryPage() {
   useAuth();
+  const router = useRouter();
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -113,7 +115,11 @@ export default function TenantDirectoryPage() {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.contractId} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                <tr
+                  key={row.contractId}
+                  onClick={() => router.push(`/contracts/${row.contractId}`)}
+                  className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
+                >
                   <td className="px-4 py-3 font-medium text-slate-900">
                     {row.roomName || "—"}
                     {row.buildingName && <span className="block text-xs font-normal text-slate-400">{row.buildingName}</span>}
@@ -127,7 +133,7 @@ export default function TenantDirectoryPage() {
                   <td className="px-4 py-3 text-right text-slate-700">{row.deposit ? formatVND(row.deposit) : "—"}</td>
                   <td className="px-4 py-3 text-slate-500">{row.signedAt ? formatDateVN(row.signedAt) : "—"}</td>
                   <td className="px-4 py-3 text-slate-500">{row.endDate ? formatDateVN(row.endDate) : "—"}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <select
                       value={row.status}
                       disabled={updatingId === row.contractId}
