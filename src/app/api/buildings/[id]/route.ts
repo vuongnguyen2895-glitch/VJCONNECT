@@ -67,6 +67,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         address: data.address || null,
         electricityPrice: data.electricityPrice ? parseFloat(data.electricityPrice) : null,
         waterPrice: data.waterPrice ? parseFloat(data.waterPrice) : null,
+        monthlyRentCost: data.monthlyRentCost ? parseFloat(data.monthlyRentCost) : null,
       },
     });
 

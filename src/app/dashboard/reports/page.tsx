@@ -49,9 +49,11 @@ interface ExpenseRow {
 interface BuildingOption {
   id: string;
   name: string;
+  monthlyRentCost: string | null;
 }
 
-const CATEGORY_PRESETS = ["Bảo trì/Sửa chữa", "Thuế/Phí", "Lương nhân viên", "Marketing", "Khác"];
+const RENT_COST_CATEGORY = "Chi phí thuê nhà";
+const CATEGORY_PRESETS = [RENT_COST_CATEGORY, "Bảo trì/Sửa chữa", "Thuế/Phí", "Lương nhân viên", "Marketing", "Khác"];
 
 export default function ReportsPage() {
   useAuth();
@@ -123,6 +125,40 @@ export default function ReportsPage() {
     }
   }
 
+  async function handleRecordRentCost(building: BuildingOption) {
+    if (!building.monthlyRentCost) return;
+    setSaving(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: RENT_COST_CATEGORY,
+          amount: building.monthlyRentCost,
+          date: today,
+          buildingId: building.id,
+          note: "",
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Không thể ghi nhận");
+        return;
+      }
+      toast.success(`Đã ghi nhận tiền thuê nhà ${building.name} tháng này`);
+      loadExpenses();
+      fetch(`/api/reports?year=${year}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((d) => setData(d))
+        .catch(() => {});
+    } catch {
+      toast.error("Không thể kết nối đến máy chủ");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleDeleteExpense(id: string) {
     if (!window.confirm("Xóa khoản chi phí này?")) return;
     try {
@@ -138,6 +174,22 @@ export default function ReportsPage() {
       toast.error("Không thể kết nối đến máy chủ");
     }
   }
+
+  const rentCostBuildings = useMemo(() => {
+    const now = new Date();
+    return buildings
+      .filter((b) => b.monthlyRentCost)
+      .map((b) => {
+        const recorded = expenses.some(
+          (e) =>
+            e.category === RENT_COST_CATEGORY &&
+            e.building?.id === b.id &&
+            new Date(e.date).getFullYear() === now.getFullYear() &&
+            new Date(e.date).getMonth() === now.getMonth(),
+        );
+        return { building: b, recorded };
+      });
+  }, [buildings, expenses]);
 
   const yearTotal = useMemo(() => {
     if (!data) return null;
@@ -287,6 +339,39 @@ export default function ReportsPage() {
             ])}
           />
         </>
+      )}
+
+      {rentCostBuildings.length > 0 && (
+        <div className="card p-6">
+          <h2 className="text-sm font-bold text-slate-900">Chi phí thuê nhà hàng tháng</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Tiền thuê gốc bạn trả cho chủ nhà mỗi tháng — bấm để ghi nhận vào chi phí tháng này.
+          </p>
+          <div className="mt-4 divide-y divide-slate-100">
+            {rentCostBuildings.map(({ building, recorded }) => (
+              <div key={building.id} className="flex items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{building.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{formatVND(building.monthlyRentCost!)}/tháng</p>
+                </div>
+                {recorded ? (
+                  <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600">
+                    Đã ghi nhận tháng này
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleRecordRentCost(building)}
+                    disabled={saving}
+                    className="btn-secondary text-xs"
+                  >
+                    {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Ghi nhận tháng này
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="card p-6">

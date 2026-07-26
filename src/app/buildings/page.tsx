@@ -97,6 +97,7 @@ function BuildingForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const [address, setAddress] = useState("");
   const [electricityPrice, setElectricityPrice] = useState("");
   const [waterPrice, setWaterPrice] = useState("");
+  const [monthlyRentCost, setMonthlyRentCost] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
@@ -109,7 +110,7 @@ function BuildingForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
       const res = await fetch("/api/buildings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address, electricityPrice, waterPrice }),
+        body: JSON.stringify({ name, address, electricityPrice, waterPrice, monthlyRentCost }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -165,6 +166,18 @@ function BuildingForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             value={waterPrice}
             onChange={(e) => setWaterPrice(e.target.value)}
             placeholder="15000"
+            inputMode="numeric"
+            className="input"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="label">
+            Tiền thuê nhà gốc/tháng (đ) <span className="font-normal text-slate-400">(không bắt buộc — nếu bạn thuê lại nhà này để cho thuê)</span>
+          </label>
+          <input
+            value={monthlyRentCost}
+            onChange={(e) => setMonthlyRentCost(e.target.value)}
+            placeholder="15000000"
             inputMode="numeric"
             className="input"
           />

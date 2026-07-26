@@ -15,6 +15,7 @@ interface BuildingDetail {
   address: string | null;
   electricityPrice: string | null;
   waterPrice: string | null;
+  monthlyRentCost: string | null;
   contracts: {
     id: string;
     contractNo: string | null;
@@ -35,6 +36,7 @@ export default function BuildingDetailPage() {
   const [address, setAddress] = useState("");
   const [electricityPrice, setElectricityPrice] = useState("");
   const [waterPrice, setWaterPrice] = useState("");
+  const [monthlyRentCost, setMonthlyRentCost] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -47,6 +49,7 @@ export default function BuildingDetailPage() {
         setAddress(data.building.address ?? "");
         setElectricityPrice(data.building.electricityPrice ?? "");
         setWaterPrice(data.building.waterPrice ?? "");
+        setMonthlyRentCost(data.building.monthlyRentCost ?? "");
       })
       .catch(() => toast.error("Không thể tải thông tin nhà/căn hộ"))
       .finally(() => setLoading(false));
@@ -63,7 +66,7 @@ export default function BuildingDetailPage() {
       const res = await fetch(`/api/buildings/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, address, electricityPrice, waterPrice }),
+        body: JSON.stringify({ name, address, electricityPrice, waterPrice, monthlyRentCost }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -153,6 +156,18 @@ export default function BuildingDetailPage() {
               Đơn giá nước (đ/m³) <span className="font-normal text-slate-400">(không bắt buộc)</span>
             </label>
             <input value={waterPrice} onChange={(e) => setWaterPrice(e.target.value)} inputMode="numeric" className="input" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">
+              Tiền thuê nhà gốc/tháng (đ){" "}
+              <span className="font-normal text-slate-400">(nếu bạn thuê lại nhà này để cho thuê)</span>
+            </label>
+            <input
+              value={monthlyRentCost}
+              onChange={(e) => setMonthlyRentCost(e.target.value)}
+              inputMode="numeric"
+              className="input"
+            />
           </div>
         </div>
         <div className="mt-4 flex justify-between">

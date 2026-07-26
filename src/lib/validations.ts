@@ -192,6 +192,10 @@ export const buildingSchema = z.object({
     (val) => (val === "" ? undefined : val),
     z.string().regex(/^\d+$/, "Đơn giá nước không hợp lệ").optional(),
   ),
+  monthlyRentCost: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().regex(/^\d+$/, "Tiền thuê nhà không hợp lệ").optional(),
+  ),
 });
 
 // ============================================================

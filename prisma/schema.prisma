@@ -102,6 +102,7 @@ model Building {
   address          String?
   electricityPrice Decimal? @map("electricity_price") @db.Decimal(12, 0) // đồng/kWh, dùng chung cho cả nhà
   waterPrice       Decimal? @map("water_price") @db.Decimal(12, 0) // đồng/m³, dùng chung cho cả nhà
+  monthlyRentCost  Decimal? @map("monthly_rent_cost") @db.Decimal(15, 0) // Tiền thuê nhà gốc phải trả chủ nhà/tháng (mô hình thuê lại cho thuê)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
