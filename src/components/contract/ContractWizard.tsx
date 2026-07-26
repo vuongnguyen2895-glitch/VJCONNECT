@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { clauseSchema, createContractSchema, landlordSchema, propertySchema, tenantSchema, termsSchema } from "@/lib/validations";
-import { INITIAL_FORM_DATA, type ContractFormData, type PartyFormData, type RentPeriodFormData, type Template } from "@/types";
+import { DEFAULT_CLAUSES, INITIAL_FORM_DATA, type ContractClause, type ContractFormData, type PartyFormData, type RentPeriodFormData, type Template } from "@/types";
 import WizardProgress from "@/components/contract/WizardProgress";
 import StepTemplate from "@/components/contract/StepTemplate";
 import StepParty from "@/components/contract/StepParty";
@@ -33,6 +33,7 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
   const [buildingsLoading, setBuildingsLoading] = useState(true);
   const [savedTenants, setSavedTenants] = useState<PartyFormData[]>([]);
   const [roomOptions, setRoomOptions] = useState<string[]>([]);
+  const [clausesCustomized, setClausesCustomized] = useState(mode === "edit");
   const [formData, setFormData] = useState<ContractFormData>(mode === "edit" ? initialFormData : INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -118,6 +119,9 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
         setFormData({ ...INITIAL_FORM_DATA, ...saved.formData, clauses: saved.formData.clauses ?? INITIAL_FORM_DATA.clauses });
         setStep(saved.step);
         setHadDraft(true);
+        // A restored draft's clauses (whatever they are) must never be silently overwritten
+        // by the template-defaults effect below.
+        setClausesCustomized(true);
         toast.success("Đã khôi phục bản nháp đang nhập dở");
       }
     } catch {
@@ -218,15 +222,18 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
   };
 
   const addClause = () => {
+    setClausesCustomized(true);
     setFormData((prev) => ({
       ...prev,
       clauses: [...prev.clauses, { id: crypto.randomUUID(), title: "", content: "" }],
     }));
   };
   const removeClause = (index: number) => {
+    setClausesCustomized(true);
     setFormData((prev) => ({ ...prev, clauses: prev.clauses.filter((_, i) => i !== index) }));
   };
   const moveClause = (index: number, direction: "up" | "down") => {
+    setClausesCustomized(true);
     setFormData((prev) => {
       const target = direction === "up" ? index - 1 : index + 1;
       if (target < 0 || target >= prev.clauses.length) return prev;
@@ -236,11 +243,22 @@ export default function ContractWizard({ mode, contractId, initialFormData }: Co
     });
   };
   const updateClause = (index: number, field: "title" | "content", value: string) => {
+    setClausesCustomized(true);
     setFormData((prev) => ({
       ...prev,
       clauses: prev.clauses.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
     }));
   };
+
+  // Swap in this template's own tailored clause set when the user picks a template — but
+  // only while the clauses are still untouched, so switching templates never clobbers edits.
+  useEffect(() => {
+    if (mode !== "create" || clausesCustomized || !selectedTemplate) return;
+    const raw = (selectedTemplate.contentJson as { defaultClauses?: ContractClause[] } | null)?.defaultClauses;
+    const nextClauses = raw && raw.length > 0 ? raw.map((c) => ({ ...c })) : DEFAULT_CLAUSES.map((c) => ({ ...c }));
+    setFormData((prev) => ({ ...prev, clauses: nextClauses }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplate?.id]);
 
   function applyErrors(issues: { path: (string | number)[]; message: string }[]): boolean {
     const next: Record<string, string> = {};
