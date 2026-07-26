@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2 } from "lucide-react";
+import { BarChart3, Building2 } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Hợp đồng" },
@@ -31,12 +31,20 @@ export default function DashboardTabs() {
           );
         })}
       </div>
-      <Link
-        href="/buildings"
-        className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
-      >
-        <Building2 size={15} /> Quản lý nhà
-      </Link>
+      <div className="mb-2 flex items-center gap-4">
+        <Link
+          href="/dashboard/reports"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
+        >
+          <BarChart3 size={15} /> Báo cáo
+        </Link>
+        <Link
+          href="/buildings"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-700"
+        >
+          <Building2 size={15} /> Quản lý nhà
+        </Link>
+      </div>
     </div>
   );
 }

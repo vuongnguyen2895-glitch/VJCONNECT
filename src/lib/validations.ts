@@ -222,3 +222,17 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateContractInput = z.infer<typeof createContractSchema>;
 export type BuildingInput = z.infer<typeof buildingSchema>;
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+
+// ============================================================
+// EXPENSES (Chi phí vận hành)
+// ============================================================
+
+export const createExpenseSchema = z.object({
+  buildingId: z.preprocess((val) => (val === "" ? undefined : val), z.string().optional()),
+  category: z.string().min(1, "Vui lòng chọn/nhập loại chi phí"),
+  amount: z.string().min(1, "Vui lòng nhập số tiền"),
+  date: z.string().min(1, "Vui lòng chọn ngày"),
+  note: z.string().optional(),
+});
+
+export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;

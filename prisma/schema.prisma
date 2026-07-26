@@ -36,6 +36,8 @@ model User {
   notifications Notification[]
   sessions      Session[]
   buildings     Building[]
+  deviceTokens  DeviceToken[]
+  expenses      Expense[]
 
   @@map("users")
 }
@@ -106,6 +108,7 @@ model Building {
 
   owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   contracts Contract[]
+  expenses  Expense[]
 
   @@index([ownerId])
   @@map("buildings")
@@ -273,6 +276,30 @@ model Invoice {
 }
 
 // ============================================================
+// EXPENSES (Chi phí vận hành — sửa chữa, thuế, bảo trì...)
+// ============================================================
+
+model Expense {
+  id         String   @id @default(cuid())
+  ownerId    String   @map("owner_id")
+  buildingId String?  @map("building_id") // null = chi phí chung, không thuộc riêng nhà nào
+  category   String   // "Bảo trì/Sửa chữa", "Thuế/Phí", "Lương nhân viên", "Khác"...
+  amount     Decimal  @db.Decimal(15, 0)
+  date       DateTime
+  note       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id])
+
+  @@index([ownerId, date])
+  @@index([buildingId])
+  @@map("expenses")
+}
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 
@@ -290,6 +317,24 @@ model Notification {
 
   @@index([userId, isRead, createdAt])
   @@map("notifications")
+}
+
+// ============================================================
+// PUSH NOTIFICATIONS (device tokens for Android/iOS app)
+// ============================================================
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String   @default("android")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
 }
 
 // ============================================================
