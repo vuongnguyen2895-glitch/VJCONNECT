@@ -38,7 +38,7 @@ export default function SignPage() {
   const [data, setData] = useState<SignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [justSigned, setJustSigned] = useState(false);
 
@@ -53,7 +53,11 @@ export default function SignPage() {
   async function handleSign() {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/sign/${params.token}`, { method: "POST" });
+      const res = await fetch(`/api/sign/${params.token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signatureImage }),
+      });
       const result = await res.json();
       if (!res.ok) {
         toast.error(result.error || "Không thể xác nhận ký");
@@ -202,12 +206,12 @@ export default function SignPage() {
           Vẽ chữ ký của bạn vào khung bên dưới để xác nhận đồng ý với các điều khoản trong hợp đồng.
         </p>
         <div className="mt-4">
-          <SignaturePad onChange={setHasSignature} />
+          <SignaturePad onChange={setSignatureImage} />
         </div>
         <button
           type="button"
           onClick={handleSign}
-          disabled={!hasSignature || submitting}
+          disabled={!signatureImage || submitting}
           className="btn-primary mt-5 w-full justify-center"
         >
           {submitting ? <Loader2 size={18} className="animate-spin" /> : "Xác nhận ký"}

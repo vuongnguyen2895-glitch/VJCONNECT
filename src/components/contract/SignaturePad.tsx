@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Eraser } from "lucide-react";
 
 interface SignaturePadProps {
-  onChange?: (hasSignature: boolean) => void;
+  onChange?: (dataUrl: string | null) => void;
 }
 
 export default function SignaturePad({ onChange }: SignaturePadProps) {
@@ -51,11 +51,13 @@ export default function SignaturePad({ onChange }: SignaturePadProps) {
     if (!hasDrawn.current) {
       hasDrawn.current = true;
       setIsEmpty(false);
-      onChange?.(true);
     }
   }
 
   function handlePointerUp() {
+    if (drawing.current && hasDrawn.current) {
+      onChange?.(canvasRef.current?.toDataURL("image/png") ?? null);
+    }
     drawing.current = false;
   }
 
@@ -65,7 +67,7 @@ export default function SignaturePad({ onChange }: SignaturePadProps) {
     if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     hasDrawn.current = false;
     setIsEmpty(true);
-    onChange?.(false);
+    onChange?.(null);
   }
 
   return (

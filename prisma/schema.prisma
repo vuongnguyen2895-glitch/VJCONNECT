@@ -177,7 +177,7 @@ model ContractParty {
   address      String?
 
   // Individual-only fields
-  dob             String?   @map("dob") // Sinh năm (year or free-text date of birth)
+  dob             String?   @map("dob") // Ngày sinh (full date of birth)
   idIssueDate     DateTime? @map("id_issue_date") // Ngày cấp CCCD
   idIssuePlace    String?   @map("id_issue_place") // Nơi cấp CCCD
 
@@ -187,10 +187,11 @@ model ContractParty {
   representativePosition String? @map("representative_position") // Chức vụ
 
   // Signing
-  signedAt     DateTime? @map("signed_at")
-  signatureRef String?   @map("signature_ref") // VNPT SmartCA reference
-  signingUrl   String?   @map("signing_url")
-  signingExpAt DateTime? @map("signing_exp_at")
+  signedAt       DateTime? @map("signed_at")
+  signatureRef   String?   @map("signature_ref") // VNPT SmartCA reference
+  signatureImage String?   @map("signature_image") @db.Text // drawn signature, PNG data URL
+  signingUrl     String?   @map("signing_url")
+  signingExpAt   DateTime? @map("signing_exp_at")
 
   // Timestamps
   createdAt    DateTime  @default(now()) @map("created_at")

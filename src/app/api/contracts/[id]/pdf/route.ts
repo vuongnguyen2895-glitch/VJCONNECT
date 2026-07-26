@@ -45,6 +45,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       businessRegNo: party?.businessRegNo || fallback?.businessRegNo || "",
       representativeName: party?.representativeName || fallback?.representativeName || "",
       representativePosition: party?.representativePosition || fallback?.representativePosition || "",
+      signatureImage: party?.signatureImage || null,
     });
 
     // Contracts created before the custom-clauses feature have no `clauses` key at all —

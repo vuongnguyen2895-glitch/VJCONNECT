@@ -33,6 +33,7 @@ interface ContractParty {
   representativePosition: string | null;
   signedAt: string | null;
   signingUrl: string | null;
+  signatureImage: string | null;
 }
 
 interface ContractClause {
@@ -549,7 +550,18 @@ function PartyCard({ title, party }: { title: string; party?: ContractParty }) {
             </div>
           )}
         </dl>
-      ) : (
+      ) : null}
+      {party?.signatureImage && (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <p className="text-xs font-medium text-slate-400">Chữ ký</p>
+          <img
+            src={party.signatureImage}
+            alt={`Chữ ký của ${party.name}`}
+            className="mt-1.5 h-16 max-w-full object-contain"
+          />
+        </div>
+      )}
+      {!party && (
         <p className="mt-4 text-sm text-slate-400">Chưa có thông tin.</p>
       )}
     </div>

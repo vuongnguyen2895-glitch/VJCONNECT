@@ -14,6 +14,7 @@ export interface PdfPartyData {
   businessRegNo: string;
   representativeName: string;
   representativePosition: string;
+  signatureImage: string | null;
 }
 
 interface RentPeriod {
@@ -69,6 +70,11 @@ function partyBlock(label: string, roleLabel: string, party: PdfPartyData): stri
     <tr><td>Số điện thoại:</td><td>${esc(party.phone)}</td></tr>
     ${party.email ? `<tr><td>Email:</td><td>${esc(party.email)}</td></tr>` : ""}
   </table>`;
+}
+
+function signatureSpace(party: PdfPartyData): string {
+  if (!party.signatureImage) return `<div class="signature-space"></div>`;
+  return `<div class="signature-space"><img src="${esc(party.signatureImage)}" alt="Chữ ký" style="max-height:76px;max-width:100%;" /></div>`;
 }
 
 function signatureLine(party: PdfPartyData): string {
@@ -166,7 +172,7 @@ ${clauseContentHtml(clause.content)}`,
     .signature-area { display: flex; justify-content: space-between; margin-top: 60px; }
     .signature-box { text-align: center; width: 45%; }
     .signature-box p { margin: 4px 0; }
-    .signature-space { height: 80px; }
+    .signature-space { height: 80px; display: flex; align-items: center; justify-content: center; }
     table { width: 100%; border-collapse: collapse; margin: 8px 0; }
     td { padding: 4px 8px; vertical-align: top; }
     td:first-child { width: 220px; font-weight: bold; }
@@ -233,13 +239,13 @@ ${clauseSections}
     <div class="signature-box">
       <p><strong>BÊN CHO THUÊ (BÊN A)</strong></p>
       <p><em>(Ký và ghi rõ họ tên)</em></p>
-      <div class="signature-space"></div>
+      ${signatureSpace(data.landlord)}
       <p><strong>${signatureLine(data.landlord)}</strong></p>
     </div>
     <div class="signature-box">
       <p><strong>BÊN THUÊ (BÊN B)</strong></p>
       <p><em>(Ký và ghi rõ họ tên)</em></p>
-      <div class="signature-space"></div>
+      ${signatureSpace(data.tenant)}
       <p><strong>${signatureLine(data.tenant)}</strong></p>
     </div>
   </div>

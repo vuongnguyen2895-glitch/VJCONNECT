@@ -37,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     businessRegNo: p?.businessRegNo || fallback?.businessRegNo || "",
     representativeName: p?.representativeName || fallback?.representativeName || "",
     representativePosition: p?.representativePosition || fallback?.representativePosition || "",
+    signatureImage: p?.signatureImage || null,
   });
 
   const clauses: ContractClause[] = data.clauses !== undefined ? data.clauses : DEFAULT_CLAUSES;
