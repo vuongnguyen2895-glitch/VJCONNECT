@@ -82,11 +82,11 @@ export default function StepParty({ title, subtitle, value, errors, onChange, sa
                 className="input pl-10"
               />
             </FormField>
-            <FormField label="Sinh năm" icon={Calendar} error={errors.dob} optional>
+            <FormField label="Ngày sinh" icon={Calendar} error={errors.dob} optional>
               <input
+                type="date"
                 value={value.dob}
                 onChange={(e) => onChange("dob", e.target.value)}
-                placeholder="1990"
                 className="input pl-10"
               />
             </FormField>

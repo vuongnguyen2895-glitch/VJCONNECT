@@ -36,6 +36,12 @@ function esc(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+/** Older contracts may still hold a bare birth year ("1990") — show those as-is, format full dates. */
+function formatDob(dob: string): string {
+  if (/^\d{4}$/.test(dob.trim())) return dob.trim();
+  return formatDateVN(dob);
+}
+
 function partyBlock(label: string, roleLabel: string, party: PdfPartyData): string {
   if (party.partyKind === "COMPANY") {
     return `
@@ -55,7 +61,7 @@ function partyBlock(label: string, roleLabel: string, party: PdfPartyData): stri
   <p><strong>${esc(label)} (${esc(roleLabel)}):</strong></p>
   <table>
     <tr><td>Ông/bà:</td><td>${esc(party.name)}</td></tr>
-    ${party.dob ? `<tr><td>Sinh năm:</td><td>${esc(party.dob)}</td></tr>` : ""}
+    ${party.dob ? `<tr><td>Ngày sinh:</td><td>${esc(formatDob(party.dob))}</td></tr>` : ""}
     <tr><td>Số CCCD/CMND:</td><td>${esc(party.cccd) || "___"}</td></tr>
     ${party.idIssueDate ? `<tr><td>Cấp ngày:</td><td>${esc(party.idIssueDate)}</td></tr>` : ""}
     ${party.idIssuePlace ? `<tr><td>Tại:</td><td>${esc(party.idIssuePlace)}</td></tr>` : ""}
