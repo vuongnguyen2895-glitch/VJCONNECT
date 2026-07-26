@@ -202,7 +202,6 @@ ${clauseContentHtml(clause.content)}`,
   <p class="indent">Giá thuê theo từng giai đoạn:</p>
   <table>${rentRows}</table>
   ${vatRate ? `<p class="indent">Giá thuê nêu trên chưa bao gồm thuế VAT. Bên B có trách nhiệm thanh toán thêm ${vatRate}% VAT trên đơn giá thuê tương ứng từng giai đoạn.</p>` : ""}
-  <p class="indent">Giá thuê không bao gồm phí quản lý, tiền điện, nước, internet và các chi phí dịch vụ khác phát sinh trong quá trình sử dụng.</p>
 
   <h2>Điều 3: Chi phí quản lý, điện, nước, internet</h2>
   <table>
