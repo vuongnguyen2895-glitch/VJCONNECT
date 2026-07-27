@@ -2,13 +2,7 @@ import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { computeStatusFromSignatures } from "@/lib/contract-utils";
-import { sendPushToUser } from "@/lib/push";
 import { PartyRole } from "@prisma/client";
-
-async function notify(userId: string, title: string, message: string, link: string) {
-  await db.notification.create({ data: { userId, type: "contract_signed", title, message, link } });
-  await sendPushToUser(userId, { title, body: message, link });
-}
 
 /**
  * GET /api/sign/:token — Public: fetch contract summary for the signing party
@@ -104,23 +98,6 @@ export async function POST(req: Request, { params }: { params: { token: string }
       },
     },
   });
-
-  const link = `/contracts/${party.contractId}`;
-  const ownerId = party.contract.ownerId;
-
-  if (party.userId !== ownerId) {
-    await notify(ownerId, "Có người vừa ký hợp đồng", `${party.name} đã ký hợp đồng ${party.contract.contractNo ?? ""}.`, link);
-  }
-
-  if (newStatus === "SIGNED") {
-    const counterpartyUserId = party.role === PartyRole.LANDLORD ? tenant?.userId : landlord?.userId;
-    const title = "Hợp đồng đã hoàn tất ký";
-    const message = `Hợp đồng ${party.contract.contractNo ?? ""} đã được ký đầy đủ bởi cả hai bên.`;
-    await notify(ownerId, title, message, link);
-    if (counterpartyUserId) {
-      await notify(counterpartyUserId, title, message, link);
-    }
-  }
 
   return NextResponse.json({ ok: true, signedAt: now, status: newStatus });
 }
