@@ -68,6 +68,7 @@ const COST_METHOD_LABELS: Record<string, string> = {
 const ACTIVITY_LABELS: Record<string, string> = {
   created: "đã tạo hợp đồng",
   updated: "đã cập nhật hợp đồng",
+  updated_after_landlord_signed: "đã sửa nội dung — chữ ký Bên A bị hủy, cần gửi ký lại",
   sent_for_signing: "đã gửi ký",
   signed_by_landlord: "(bên A) đã ký hợp đồng",
   signed_by_tenant: "(bên B) đã ký hợp đồng",
@@ -290,6 +291,11 @@ export default function ContractDetailPage() {
                 {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Xóa bản nháp
               </button>
             </>
+          )}
+          {contract.status === "PENDING_TENANT" && (
+            <Link href={`/contracts/${contract.id}/edit`} className="btn-secondary text-sm">
+              <Pencil size={16} /> Chỉnh sửa
+            </Link>
           )}
           {contract.status !== "DRAFT" && contract.deposit && !depositReceived && (
             <button

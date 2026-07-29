@@ -22,8 +22,8 @@ export default function EditContractPage() {
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         const contract = data.contract;
-        if (contract.status !== "DRAFT") {
-          toast.error("Chỉ có thể chỉnh sửa hợp đồng ở trạng thái bản nháp");
+        if (contract.status !== "DRAFT" && contract.status !== "PENDING_TENANT") {
+          toast.error("Chỉ có thể chỉnh sửa hợp đồng ở trạng thái bản nháp hoặc chờ bên thuê ký");
           router.replace(`/contracts/${params.id}`);
           return;
         }

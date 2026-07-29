@@ -63,8 +63,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (contract.ownerId !== user.id) {
       return NextResponse.json({ error: "Không có quyền chỉnh sửa" }, { status: 403 });
     }
-    if (contract.status !== "DRAFT") {
-      return NextResponse.json({ error: "Chỉ có thể chỉnh sửa hợp đồng ở trạng thái bản nháp" }, { status: 400 });
+    if (contract.status !== "DRAFT" && contract.status !== "PENDING_TENANT") {
+      return NextResponse.json(
+        { error: "Chỉ có thể chỉnh sửa hợp đồng ở trạng thái bản nháp hoặc chờ bên thuê ký" },
+        { status: 400 },
+      );
     }
 
     const template = await db.template.findUnique({ where: { id: data.templateId } });
@@ -95,6 +98,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const landlordParty = contract.parties.find((p) => p.role === "LANDLORD");
     const tenantParty = contract.parties.find((p) => p.role === "TENANT");
+
+    // Bên A đã ký ở trạng thái này — nội dung thay đổi thì chữ ký cũ không còn phản ánh đúng
+    // bản đã ký nữa, nên đưa hợp đồng về bản nháp và yêu cầu Bên A gửi ký lại.
+    const wasPendingTenant = contract.status === "PENDING_TENANT";
 
     const partyUpdateData = (party: typeof data.landlord) => ({
       partyKind: party.partyKind,
@@ -130,15 +137,25 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         endDate,
         rentAmount: parseFloat(data.terms.rentAmount) || 0,
         deposit: data.terms.deposit ? parseFloat(data.terms.deposit) : null,
+        status: wasPendingTenant ? "DRAFT" : undefined,
         parties: {
           update: [
-            ...(landlordParty ? [{ where: { id: landlordParty.id }, data: partyUpdateData(data.landlord) }] : []),
+            ...(landlordParty
+              ? [
+                  {
+                    where: { id: landlordParty.id },
+                    data: wasPendingTenant
+                      ? { ...partyUpdateData(data.landlord), signedAt: null, signatureRef: null, signatureImage: null }
+                      : partyUpdateData(data.landlord),
+                  },
+                ]
+              : []),
             ...(tenantParty ? [{ where: { id: tenantParty.id }, data: partyUpdateData(data.tenant) }] : []),
           ],
         },
         activities: {
           create: {
-            action: "updated",
+            action: wasPendingTenant ? "updated_after_landlord_signed" : "updated",
             actorId: user.id,
             actorName: user.name,
           },
