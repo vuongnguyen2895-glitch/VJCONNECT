@@ -10,7 +10,7 @@ const updateInvoiceStatusSchema = z.object({
 async function loadOwnedInvoice(invoiceId: string, userId: string) {
   const invoice = await db.invoice.findUnique({
     where: { id: invoiceId },
-    include: { contract: { select: { ownerId: true } } },
+    include: { contract: { select: { ownerId: true, parties: { select: { role: true, phone: true } } } } },
   });
   if (!invoice) return { error: NextResponse.json({ error: "Không tìm thấy phiếu tính tiền" }, { status: 404 }) };
   if (invoice.contract.ownerId !== userId) {
@@ -28,7 +28,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const { invoice, error } = await loadOwnedInvoice(params.id, user.id);
     if (error) return error;
 
-    return NextResponse.json({ invoice });
+    const tenantPhone = invoice.contract.parties.find((p) => p.role === "TENANT")?.phone ?? null;
+    const { contract, ...invoiceFields } = invoice;
+    return NextResponse.json({ invoice: { ...invoiceFields, tenantPhone } });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Vui lòng đăng nhập" }, { status: 401 });

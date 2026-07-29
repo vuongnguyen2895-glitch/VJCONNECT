@@ -1,4 +1,5 @@
-import { Banknote, Building2, Calendar, CalendarClock, DoorOpen, FileText, Landmark, MapPin, Plus, Ruler, Sofa, Target, Trash2, Wallet } from "lucide-react";
+import { Banknote, Building2, Calendar, CalendarClock, DoorOpen, FileText, Landmark, MapPin, Plus, QrCode, Ruler, Sofa, Target, Trash2, Wallet } from "lucide-react";
+import toast from "react-hot-toast";
 import FormField from "./FormField";
 import BuildingSelect, { type BuildingOption } from "./BuildingSelect";
 import type { ContractFormData, CostMethod, RentPeriodFormData } from "@/types";
@@ -379,6 +380,45 @@ export default function StepPropertyTerms({
                 className="input pl-10"
               />
             </FormField>
+          </div>
+
+          <div className="mt-4">
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-600">
+              <QrCode size={15} /> Mã QR nhận tiền (không bắt buộc)
+            </p>
+            {terms.qrCodeImage ? (
+              <div className="flex items-center gap-3">
+                <img src={terms.qrCodeImage} alt="Mã QR nhận tiền" className="h-24 w-24 rounded-lg border border-slate-200 object-contain" />
+                <button
+                  type="button"
+                  onClick={() => onTermsChange("qrCodeImage", "")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600"
+                >
+                  <Trash2 size={13} /> Xoá ảnh QR
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                    toast.error("Ảnh QR tối đa 2MB");
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => onTermsChange("qrCodeImage", reader.result as string);
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+                className="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
+              />
+            )}
+            <p className="mt-1.5 text-xs text-slate-400">
+              Tải lên ảnh chụp mã QR chuyển khoản (VD: từ app ngân hàng) để hiện trên phiếu tính tiền hàng tháng.
+            </p>
           </div>
         </div>
       </div>

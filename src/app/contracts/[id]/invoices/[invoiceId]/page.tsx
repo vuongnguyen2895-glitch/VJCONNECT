@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ArrowLeft, CheckCircle2, Clock, ExternalLink, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Download, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatVND, formatDateVN } from "@/lib/contract-utils";
+
+function ZaloIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M7.5 8.5h9l-9 7h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 interface InvoiceDetail {
   id: string;
@@ -29,6 +38,7 @@ interface InvoiceDetail {
   status: "PAID" | "UNPAID";
   paidAt: string | null;
   note: string | null;
+  tenantPhone: string | null;
 }
 
 export default function InvoiceDetailPage() {
@@ -39,6 +49,9 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exportingImage, setExportingImage] = useState(false);
+  const [sharingZalo, setSharingZalo] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     fetch(`/api/invoices/${params.invoiceId}`)
@@ -48,6 +61,74 @@ export default function InvoiceDetailPage() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.invoiceId]);
+
+  async function captureInvoiceImage(): Promise<Blob | null> {
+    const body = iframeRef.current?.contentDocument?.body;
+    if (!body) return null;
+    const html2canvas = (await import("html2canvas")).default;
+    const canvas = await html2canvas(body, { backgroundColor: "#ffffff", scale: 2 });
+    return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
+  }
+
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDownloadImage() {
+    if (!invoice) return;
+    setExportingImage(true);
+    try {
+      const blob = await captureInvoiceImage();
+      if (!blob) {
+        toast.error("Không thể tạo hình ảnh, thử lại sau");
+        return;
+      }
+      downloadBlob(blob, `phieu-tinh-tien-${invoice.month}-${invoice.year}.png`);
+    } finally {
+      setExportingImage(false);
+    }
+  }
+
+  async function handleShareZalo() {
+    if (!invoice) return;
+    setSharingZalo(true);
+    try {
+      const blob = await captureInvoiceImage();
+      if (!blob) {
+        toast.error("Không thể tạo hình ảnh, thử lại sau");
+        return;
+      }
+      const filename = `phieu-tinh-tien-${invoice.month}-${invoice.year}.png`;
+      const file = new File([blob], filename, { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: `Phiếu tính tiền tháng ${invoice.month}/${invoice.year}` });
+        } catch (err: any) {
+          if (err?.name !== "AbortError") {
+            toast.error("Không thể chia sẻ, đã tải ảnh xuống thay thế");
+            downloadBlob(blob, filename);
+          }
+        }
+        return;
+      }
+
+      // Máy tính / trình duyệt không hỗ trợ chia sẻ file trực tiếp — tải ảnh xuống
+      // và mở sẵn cửa sổ chat Zalo với người thuê để đính kèm thủ công.
+      downloadBlob(blob, filename);
+      if (invoice.tenantPhone) {
+        window.open(`https://zalo.me/${invoice.tenantPhone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer");
+      }
+      toast.success("Đã tải ảnh xuống — hãy đính kèm khi trò chuyện trên Zalo");
+    } finally {
+      setSharingZalo(false);
+    }
+  }
 
   async function toggleStatus() {
     if (!invoice) return;
@@ -191,8 +272,23 @@ export default function InvoiceDetailPage() {
           <button type="button" onClick={handleDelete} disabled={deleting} className="btn-danger text-sm">
             {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Xóa phiếu
           </button>
+          <button type="button" onClick={handleDownloadImage} disabled={exportingImage} className="btn-secondary text-sm">
+            {exportingImage ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Tải xuống hình ảnh
+          </button>
+          <button type="button" onClick={handleShareZalo} disabled={sharingZalo} className="btn-secondary text-sm">
+            {sharingZalo ? <Loader2 size={16} className="animate-spin" /> : <ZaloIcon />} Gửi qua Zalo
+          </button>
         </div>
       </div>
+
+      <iframe
+        ref={iframeRef}
+        src={`/api/invoices/${invoice.id}/pdf`}
+        title="invoice-export-source"
+        style={{ position: "absolute", left: -9999, top: 0, width: 664, height: 1200, border: "none" }}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
     </div>
   );
 }

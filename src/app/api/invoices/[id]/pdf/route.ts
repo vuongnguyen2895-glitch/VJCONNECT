@@ -46,6 +46,16 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     const roomLabel = [invoice.contract.building?.name, invoice.contract.roomName].filter(Boolean).join(" — ");
 
+    // Hạn thanh toán: ngày thanh toán hàng tháng đã thoả thuận trong hợp đồng, áp vào đúng tháng của phiếu này.
+    const paymentDay = parseInt(data?.terms?.paymentDate, 10);
+    const dueDate = paymentDay >= 1 && paymentDay <= 31 ? new Date(invoice.year, invoice.month - 1, paymentDay) : null;
+
+    const bankAccountName = data?.terms?.bankAccountName || "";
+    const bankAccountNumber = data?.terms?.bankAccountNumber || "";
+    const bankName = data?.terms?.bankName || "";
+    const qrCodeImage = data?.terms?.qrCodeImage || "";
+    const hasBankInfo = Boolean(bankAccountNumber || qrCodeImage);
+
     const row = (label: string, value: string, bold = false) => `
     <tr>
       <td>${esc(label)}</td>
@@ -96,6 +106,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     ${address ? row("Địa chỉ", address) : ""}
     ${landlordName ? row("Bên cho thuê", landlordName) : ""}
     ${tenantName ? row("Bên thuê", `${tenantName}${tenantPhone ? " — " + tenantPhone : ""}`) : ""}
+    ${dueDate ? row("Hạn thanh toán", formatDateVN(dueDate), true) : ""}
   </table>
 
   <table>
@@ -119,8 +130,22 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   ${invoice.note ? `<p style="margin-top:20px;font-style:italic;">Ghi chú: ${esc(invoice.note)}</p>` : ""}
 
+  ${
+    hasBankInfo
+      ? `<div style="margin-top:24px;border-top:1px solid #eee;padding-top:16px;text-align:center;">
+    <p style="font-weight:bold;margin-bottom:10px;">Thông tin thanh toán</p>
+    ${qrCodeImage ? `<img src="${esc(qrCodeImage)}" alt="Mã QR nhận tiền" style="max-width:160px;max-height:160px;" />` : ""}
+    ${
+      bankAccountNumber
+        ? `<p style="margin-top:8px;">${esc(bankAccountName) ? esc(bankAccountName) + " — " : ""}${esc(bankAccountNumber)}${bankName ? ` (${esc(bankName)})` : ""}</p>`
+        : ""
+    }
+  </div>`
+      : ""
+  }
+
   <p style="text-align: center; margin-top: 40px; font-size: 11px; color: #999;">
-    Phiếu được tạo trên VJConnect.com
+    Phiếu được tạo trên hopdongthue.com
   </p>
 </body>
 </html>`;

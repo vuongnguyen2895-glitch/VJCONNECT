@@ -61,6 +61,7 @@ export default function StepReview({ data, template, buildingName, submitting, s
             {data.terms.bankAccountNumber && (
               <Row label="Tài khoản nhận tiền" value={`${data.terms.bankAccountNumber} (${data.terms.bankName || "—"})`} />
             )}
+            {data.terms.qrCodeImage && <Row label="Mã QR nhận tiền" value="Đã tải lên" />}
           </dl>
 
           <div className="mt-3 border-t border-slate-100 pt-3">

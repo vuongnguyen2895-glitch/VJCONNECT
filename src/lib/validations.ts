@@ -147,6 +147,7 @@ export const termsSchema = z.object({
   bankAccountName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   bankName: z.string().optional(),
+  qrCodeImage: z.string().optional(),
 });
 
 // ============================================================

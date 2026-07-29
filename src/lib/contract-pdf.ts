@@ -251,7 +251,7 @@ ${clauseSections}
   </div>
 
   <p style="text-align: center; margin-top: 40px; font-size: 11px; color: #999;">
-    Hợp đồng được tạo trên VJConnect.com — Nền tảng hợp đồng thuê nhà điện tử
+    Hợp đồng được tạo trên hopdongthue.com — Nền tảng hợp đồng thuê nhà điện tử
   </p>
 </body>
 </html>`;

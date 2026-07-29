@@ -129,6 +129,7 @@ export interface ContractFormData {
     bankAccountName: string;
     bankAccountNumber: string;
     bankName: string;
+    qrCodeImage: string;
   };
 }
 
@@ -243,5 +244,6 @@ export const INITIAL_FORM_DATA: ContractFormData = {
     bankAccountName: "",
     bankAccountNumber: "",
     bankName: "",
+    qrCodeImage: "",
   },
 };
